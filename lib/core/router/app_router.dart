@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../features/auth/presentation/auth_state_provider.dart';
 import '../../features/auth/presentation/splash_screen.dart';
+import '../widgets/component_catalog_screen.dart';
 import '../widgets/placeholder_screen.dart';
 
 /// Notifier untuk refreshListenable GoRouter agar tidak re-instansiasi pada perubahan auth
@@ -24,8 +25,9 @@ class RouterNotifier extends ChangeNotifier {
         location == '/register' ||
         location == '/forgot-password';
     final bool isSplash = location == '/splash';
+    final bool isCatalog = location == '/catalog';
 
-    if (isSplash) return null;
+    if (isSplash || isCatalog) return null;
 
     // Jika belum autentikasi dan mengakses rute terlindungi -> lempar ke login
     if (!isAuth && !isLoggingIn) {
@@ -55,6 +57,12 @@ final routerProvider = Provider<GoRouter>((ref) {
     refreshListenable: notifier,
     redirect: notifier.redirect,
     routes: <RouteBase>[
+      // Katalog Komponen Debug (M1)
+      GoRoute(
+        path: '/catalog',
+        builder: (context, state) => const ComponentCatalogScreen(),
+      ),
+
       // Splash Screen (M0)
       GoRoute(
         path: '/splash',
