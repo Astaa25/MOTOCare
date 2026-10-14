@@ -129,8 +129,12 @@ abstract class AppValidators {
     if (value == null || value.trim().isEmpty) {
       return 'Biaya wajib diisi';
     }
+    final trimmed = value.trim();
+    if (trimmed.contains('-')) {
+      return 'Biaya servis tidak boleh negatif';
+    }
     // Bersihkan karakter selain angka
-    final cleanValue = value.replaceAll(RegExp(r'[^0-9]'), '');
+    final cleanValue = trimmed.replaceAll(RegExp(r'[^0-9]'), '');
     final num? amount = num.tryParse(cleanValue);
     if (amount == null || amount < 0) {
       return 'Biaya servis tidak boleh negatif';

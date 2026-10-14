@@ -15,6 +15,7 @@ class NetworkGuard {
     Future<T> Function() action, {
     Duration timeout = AppConstants.networkTimeout,
     int maxRetries = 1,
+    Duration retryDelay = const Duration(milliseconds: 250),
   }) async {
     int attempt = 0;
 
@@ -33,7 +34,9 @@ class NetworkGuard {
 
         if (attempt <= maxRetries && isNetworkIssue) {
           // Jeda singkat sebelum retry otomatis
-          await Future<void>.delayed(const Duration(milliseconds: 250));
+          if (retryDelay > Duration.zero) {
+            await Future<void>.delayed(retryDelay);
+          }
           continue;
         }
 
