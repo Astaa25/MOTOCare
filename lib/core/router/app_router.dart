@@ -20,12 +20,14 @@ import '../../features/reminders/presentation/reminders_screen.dart';
 import '../../features/service_history/presentation/add_edit_service_history_screen.dart';
 import '../../features/service_history/presentation/service_history_detail_screen.dart';
 import '../../features/service_history/presentation/service_history_screen.dart';
+import '../../features/help_requests/presentation/create_help_request_screen.dart';
+import '../../features/help_requests/presentation/help_request_detail_screen.dart';
+import '../../features/help_requests/presentation/my_help_requests_screen.dart';
 import '../../features/tutorials/presentation/tutorial_detail_screen.dart';
 import '../../features/tutorials/presentation/tutorials_screen.dart';
 import '../../features/workshops/presentation/workshop_detail_screen.dart';
 import '../../features/workshops/presentation/workshops_screen.dart';
 import '../widgets/component_catalog_screen.dart';
-import '../widgets/placeholder_screen.dart';
 
 /// Notifier untuk refreshListenable GoRouter agar tidak re-instansiasi pada perubahan auth
 class RouterNotifier extends ChangeNotifier {
@@ -246,23 +248,18 @@ final routerProvider = Provider<GoRouter>((ref) {
       // Bantuan Mekanik (M7)
       GoRoute(
         path: '/help',
-        builder: (context, state) => const PlaceholderScreen(
-          title: 'Permintaan Bantuan Mekanik',
-          milestone: 'M7',
-        ),
+        builder: (context, state) => const MyHelpRequestsScreen(),
         routes: <RouteBase>[
           GoRoute(
             path: 'new',
-            builder: (context, state) => const PlaceholderScreen(
-              title: 'Buat Permintaan Bantuan',
-              milestone: 'M7',
+            builder: (context, state) => CreateHelpRequestScreen(
+              initialWorkshopId: state.uri.queryParameters['workshopId'],
             ),
           ),
           GoRoute(
             path: ':id',
-            builder: (context, state) => PlaceholderScreen(
-              title: 'Detail Permintaan #${state.pathParameters['id']}',
-              milestone: 'M7',
+            builder: (context, state) => HelpRequestDetailScreen(
+              requestId: state.pathParameters['id'] ?? '',
             ),
           ),
         ],
