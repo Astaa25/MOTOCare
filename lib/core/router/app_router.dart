@@ -13,6 +13,9 @@ import '../../features/motorcycles/presentation/motorcycles_screen.dart';
 import '../../features/motorcycles/presentation/update_mileage_screen.dart';
 import '../../features/profile/presentation/edit_profile_screen.dart';
 import '../../features/profile/presentation/profile_screen.dart';
+import '../../features/service_history/presentation/add_edit_service_history_screen.dart';
+import '../../features/service_history/presentation/service_history_detail_screen.dart';
+import '../../features/service_history/presentation/service_history_screen.dart';
 import '../widgets/component_catalog_screen.dart';
 import '../widgets/placeholder_screen.dart';
 
@@ -128,17 +131,21 @@ final routerProvider = Provider<GoRouter>((ref) {
               ),
               GoRoute(
                 path: 'services',
-                builder: (context, state) => PlaceholderScreen(
-                  title: 'Riwayat Servis Motor #${state.pathParameters['id']}',
-                  milestone: 'M4',
+                builder: (context, state) => ServiceHistoryScreen(
+                  motorcycleId: state.pathParameters['id']!,
                 ),
                 routes: <RouteBase>[
                   GoRoute(
                     path: 'new',
-                    builder: (context, state) => const PlaceholderScreen(
-                      title: 'Tambah Catatan Servis',
-                      milestone: 'M4',
-                    ),
+                    builder: (context, state) {
+                      final extra = state.extra as Map<String, dynamic>?;
+                      return AddEditServiceHistoryScreen(
+                        motorcycleId: state.pathParameters['id']!,
+                        initialServiceType: extra?['serviceType'] as String?,
+                        initialMileage: extra?['mileage'] as int?,
+                        initialDescription: extra?['description'] as String?,
+                      );
+                    },
                   ),
                 ],
               ),
@@ -157,9 +164,8 @@ final routerProvider = Provider<GoRouter>((ref) {
       // Servis Detail (M4)
       GoRoute(
         path: '/services/:id',
-        builder: (context, state) => PlaceholderScreen(
-          title: 'Detail Servis #${state.pathParameters['id']}',
-          milestone: 'M4',
+        builder: (context, state) => ServiceHistoryDetailScreen(
+          serviceId: state.pathParameters['id']!,
         ),
       ),
 

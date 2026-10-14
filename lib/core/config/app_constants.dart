@@ -18,6 +18,19 @@ abstract class AppConstants {
     'Kabupaten Aceh Utara',
   ];
 
+  /// Jenis servis resmi sesuai PRD 6.7
+  static const List<String> serviceTypes = <String>[
+    'Ganti oli',
+    'Servis berkala',
+    'Rem',
+    'Rantai',
+    'Ban',
+    'Aki',
+    'Busi',
+    'Filter udara',
+    'Lainnya',
+  ];
+
   /// Kontak darurat resmi (kosong secara default, tidak boleh dikarang)
   static const List<String> emergencyContacts = <String>[];
 }
