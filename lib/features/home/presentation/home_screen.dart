@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/utils/formatters.dart';
+import '../../../core/widgets/app_bottom_nav.dart';
 import '../../../core/widgets/empty_state.dart';
 import '../../../core/widgets/error_state.dart';
 import '../../../core/widgets/loading_skeleton.dart';
@@ -323,6 +324,28 @@ class HomeScreen extends ConsumerWidget {
             ],
           ),
         ),
+      ),
+      bottomNavigationBar: AppBottomNav(
+        currentIndex: 0,
+        unreadNotificationsCount: unreadNotifCount,
+        onTap: (index) {
+          switch (index) {
+            case 0:
+              break;
+            case 1:
+              context.go('/motors');
+              break;
+            case 2:
+              context.go('/workshops');
+              break;
+            case 3:
+              context.go('/tutorials');
+              break;
+            case 4:
+              context.go('/profile');
+              break;
+          }
+        },
       ),
     );
   }

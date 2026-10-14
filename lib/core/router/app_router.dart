@@ -20,6 +20,10 @@ import '../../features/reminders/presentation/reminders_screen.dart';
 import '../../features/service_history/presentation/add_edit_service_history_screen.dart';
 import '../../features/service_history/presentation/service_history_detail_screen.dart';
 import '../../features/service_history/presentation/service_history_screen.dart';
+import '../../features/tutorials/presentation/tutorial_detail_screen.dart';
+import '../../features/tutorials/presentation/tutorials_screen.dart';
+import '../../features/workshops/presentation/workshop_detail_screen.dart';
+import '../../features/workshops/presentation/workshops_screen.dart';
 import '../widgets/component_catalog_screen.dart';
 import '../widgets/placeholder_screen.dart';
 
@@ -214,16 +218,12 @@ final routerProvider = Provider<GoRouter>((ref) {
       // Bengkel (M6)
       GoRoute(
         path: '/workshops',
-        builder: (context, state) => const PlaceholderScreen(
-          title: 'Bengkel Terverifikasi',
-          milestone: 'M6',
-        ),
+        builder: (context, state) => const WorkshopsScreen(),
         routes: <RouteBase>[
           GoRoute(
             path: ':id',
-            builder: (context, state) => PlaceholderScreen(
-              title: 'Detail Bengkel #${state.pathParameters['id']}',
-              milestone: 'M6',
+            builder: (context, state) => WorkshopDetailScreen(
+              workshopId: state.pathParameters['id'] ?? '',
             ),
           ),
         ],
@@ -232,16 +232,12 @@ final routerProvider = Provider<GoRouter>((ref) {
       // Tutorial (M6)
       GoRoute(
         path: '/tutorials',
-        builder: (context, state) => const PlaceholderScreen(
-          title: 'Tutorial Perawatan Motor',
-          milestone: 'M6',
-        ),
+        builder: (context, state) => const TutorialsScreen(),
         routes: <RouteBase>[
           GoRoute(
             path: ':id',
-            builder: (context, state) => PlaceholderScreen(
-              title: 'Detail Tutorial #${state.pathParameters['id']}',
-              milestone: 'M6',
+            builder: (context, state) => TutorialDetailScreen(
+              tutorialId: state.pathParameters['id'] ?? '',
             ),
           ),
         ],

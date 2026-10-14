@@ -44,6 +44,10 @@ abstract class AppColors {
 
   /// Background surface kartu abu-abu netral tipis
   static const Color surfaceLight = Color(0xFFFAFAFA);
+  static const Color surface = surfaceLight;
+
+  /// Charcoal netral gelap untuk teks dan tombol
+  static const Color charcoal = Color(0xFF1F1F1F);
 
   /// Gradasi header: #FFF7F0, #FFE2C7, #FFB875 (atas ke bawah)
   static const LinearGradient headerGradient = LinearGradient(

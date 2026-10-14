@@ -11,6 +11,7 @@ class EmptyState extends StatelessWidget {
   final VoidCallback? onAction;
   final String? secondaryActionLabel;
   final VoidCallback? onSecondaryAction;
+  final Widget? extraContent;
 
   const EmptyState({
     super.key,
@@ -21,6 +22,7 @@ class EmptyState extends StatelessWidget {
     this.onAction,
     this.secondaryActionLabel,
     this.onSecondaryAction,
+    this.extraContent,
   });
 
   @override
@@ -88,6 +90,10 @@ class EmptyState extends StatelessWidget {
                   ),
                 ),
               ),
+            ],
+            if (extraContent != null) ...<Widget>[
+              const SizedBox(height: 20),
+              extraContent!,
             ],
           ],
         ),
