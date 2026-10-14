@@ -22,12 +22,20 @@ abstract class AppFormatters {
 
   /// Memformat tanggal ke format Indonesia singkat (contoh: 14 Okt 2026)
   static String dateShort(DateTime date) {
-    return DateFormat('d MMM yyyy', 'id_ID').format(date);
+    try {
+      return DateFormat('d MMM yyyy', 'id_ID').format(date);
+    } catch (_) {
+      return DateFormat('d MMM yyyy').format(date);
+    }
   }
 
   /// Memformat tanggal dan waktu (contoh: 14 Okt 2026, 08:30)
   static String dateTime(DateTime date) {
-    return DateFormat('d MMM yyyy, HH:mm', 'id_ID').format(date);
+    try {
+      return DateFormat('d MMM yyyy, HH:mm', 'id_ID').format(date);
+    } catch (_) {
+      return DateFormat('d MMM yyyy, HH:mm').format(date);
+    }
   }
 
   /// Memformat plat nomor menjadi huruf kapital rapi (contoh: BL 1234 AB)

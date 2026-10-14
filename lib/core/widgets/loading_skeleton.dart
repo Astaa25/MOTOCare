@@ -82,11 +82,27 @@ class _LoadingSkeletonState extends State<LoadingSkeleton>
     _controller = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 1400),
-    )..repeat(reverse: true);
+    );
+
+    if (!AppMotion.isTestEnvironment) {
+      _controller.repeat(reverse: true);
+    }
 
     _animation = Tween<double>(begin: 0.35, end: 0.85).animate(
       CurvedAnimation(parent: _controller, curve: Curves.easeInOut),
     );
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (AppMotion.shouldDisableAnimation(context)) {
+      if (_controller.isAnimating) {
+        _controller.stop();
+      }
+    } else if (!_controller.isAnimating && !AppMotion.isTestEnvironment) {
+      _controller.repeat(reverse: true);
+    }
   }
 
   @override

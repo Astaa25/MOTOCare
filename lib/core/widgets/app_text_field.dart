@@ -21,6 +21,7 @@ class AppTextField extends StatefulWidget {
   final ValueChanged<String>? onChanged;
   final VoidCallback? onTap;
   final List<TextInputFormatter>? inputFormatters;
+  final TextCapitalization textCapitalization;
 
   const AppTextField({
     super.key,
@@ -41,6 +42,7 @@ class AppTextField extends StatefulWidget {
     this.onChanged,
     this.onTap,
     this.inputFormatters,
+    this.textCapitalization = TextCapitalization.none,
   });
 
   @override
@@ -79,6 +81,7 @@ class _AppTextFieldState extends State<AppTextField> {
           obscureText: _obscureText,
           enabled: widget.enabled,
           readOnly: widget.readOnly,
+          textCapitalization: widget.textCapitalization,
           maxLines: widget.maxLines,
           onChanged: widget.onChanged,
           onTap: widget.onTap,

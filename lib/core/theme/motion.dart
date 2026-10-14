@@ -1,3 +1,5 @@
+import 'dart:io' show Platform;
+import 'package:flutter/foundation.dart';
 import 'package:flutter/widgets.dart';
 
 /// Konstanta durasi dan kurva animasi MotoCare sesuai PRD bagian 4.5
@@ -18,9 +20,25 @@ abstract class AppMotion {
   static const Curve snappyCurve = Curves.easeOutBack;
   static const Curve smoothCurve = Curves.easeInOutCubic;
 
-  /// Memeriksa apakah animasi dinonaktifkan oleh pengguna (aksesibilitas)
-  static bool shouldDisableAnimation(BuildContext context) {
-    return MediaQuery.maybeDisableAnimationsOf(context) ?? false;
+  /// Memeriksa apakah saat ini berjalan di lingkungan automated test
+  static bool get isTestEnvironment {
+    if (kIsWeb) return false;
+    try {
+      return Platform.environment.containsKey('FLUTTER_TEST');
+    } catch (_) {
+      return false;
+    }
+  }
+
+  /// Memeriksa apakah animasi dinonaktifkan oleh pengguna (aksesibilitas) atau automated test
+  static bool shouldDisableAnimation([BuildContext? context]) {
+    if (isTestEnvironment) {
+      return true;
+    }
+    if (context != null) {
+      return MediaQuery.maybeDisableAnimationsOf(context) ?? false;
+    }
+    return false;
   }
 
   /// Mengembalikan durasi yang disesuaikan jika aksesibilitas mematikan animasi

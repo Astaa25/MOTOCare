@@ -51,6 +51,7 @@ class _SecondaryButtonState extends State<SecondaryButton> {
               foregroundColor: AppColors.textPrimary,
               disabledForegroundColor: AppColors.textSecondary.withValues(alpha: 0.5),
               side: const BorderSide(color: AppColors.border, width: 1.5),
+              minimumSize: Size(widget.width ?? 0, widget.height),
               padding: const EdgeInsets.symmetric(horizontal: 16),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(14),
