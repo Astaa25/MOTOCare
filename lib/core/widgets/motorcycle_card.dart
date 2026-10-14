@@ -90,7 +90,8 @@ class MotorcycleCard extends StatelessWidget {
                           ),
                         ),
                         const SizedBox(height: 2),
-                        Row(
+                        Wrap(
+                          crossAxisAlignment: WrapCrossAlignment.center,
                           children: <Widget>[
                             Text(
                               'Tahun $productionYear',
@@ -123,7 +124,10 @@ class MotorcycleCard extends StatelessWidget {
                       ],
                     ),
                   ),
-                  ?statusBadge,
+                  if (statusBadge != null) ...<Widget>[
+                    const SizedBox(width: 8),
+                    statusBadge!,
+                  ],
                 ],
               ),
             ),
@@ -137,29 +141,34 @@ class MotorcycleCard extends StatelessWidget {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: <Widget>[
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: <Widget>[
-                          const Text(
-                            'Kilometer Terkini',
-                            style: TextStyle(
-                              fontSize: 12,
-                              color: AppColors.textSecondary,
-                              fontWeight: FontWeight.w500,
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: <Widget>[
+                            const Text(
+                              'Kilometer Terkini',
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: AppColors.textSecondary,
+                                fontWeight: FontWeight.w500,
+                              ),
                             ),
-                          ),
-                          const SizedBox(height: 4),
-                          Text(
-                            AppFormatters.mileage(currentMileage),
-                            style: const TextStyle(
-                              fontSize: 20,
-                              fontWeight: FontWeight.w800,
-                              color: AppColors.primaryText,
+                            const SizedBox(height: 4),
+                            Text(
+                              AppFormatters.mileage(currentMileage),
+                              style: const TextStyle(
+                                fontSize: 20,
+                                fontWeight: FontWeight.w800,
+                                color: AppColors.primaryText,
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
                             ),
-                          ),
-                        ],
+                          ],
+                        ),
                       ),
-                      if (onUpdateMileage != null)
+                      if (onUpdateMileage != null) ...<Widget>[
+                        const SizedBox(width: 8),
                         OutlinedButton.icon(
                           onPressed: onUpdateMileage,
                           icon: const Icon(Icons.edit_road_rounded, size: 16),
@@ -172,6 +181,7 @@ class MotorcycleCard extends StatelessWidget {
                             textStyle: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
                           ),
                         ),
+                      ],
                     ],
                   ),
                   if (mileageUpdatedAt != null) ...<Widget>[

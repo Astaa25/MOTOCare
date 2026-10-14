@@ -351,14 +351,16 @@ class _TutorialCard extends StatelessWidget {
                   children: <Widget>[
                     Row(
                       children: <Widget>[
-                        StatusChip(
-                          label: tutorial.topic,
-                          icon: Icons.play_lesson_rounded,
-                          backgroundColor: AppColors.cream,
-                          textColor: AppColors.primaryText,
-                          borderColor: AppColors.peach,
+                        Flexible(
+                          child: StatusChip(
+                            label: tutorial.topic,
+                            icon: Icons.play_lesson_rounded,
+                            backgroundColor: AppColors.cream,
+                            textColor: AppColors.primaryText,
+                            borderColor: AppColors.peach,
+                          ),
                         ),
-                        const Spacer(),
+                        const SizedBox(width: 8),
                         const Text(
                           'YouTube',
                           style: TextStyle(

@@ -8,6 +8,9 @@ abstract class AppConstants {
   static const int requestTimeoutMinutes = 15;
   static const int pageSize = 20;
 
+  /// Batas waktu timeout permintaan jaringan (15 detik) sesuai PRD M8
+  static const Duration networkTimeout = Duration(seconds: 15);
+
   /// Rentang durasi animasi splash screen (3000 - 5000 ms)
   static const int splashMinMs = 3000;
   static const int splashMaxMs = 5000;
