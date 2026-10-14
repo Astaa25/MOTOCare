@@ -5,7 +5,7 @@ import 'package:motocare/core/utils/result.dart';
 void main() {
   group('Result & AppException Unit Tests', () {
     test('Result.success mengembalikan data dan isSuccess bernilai true', () {
-      final Result<String> result = Result.success('data motor');
+      const Result<String> result = Result.success('data motor');
 
       expect(result.isSuccess, isTrue);
       expect(result.isFailure, isFalse);
@@ -24,7 +24,7 @@ void main() {
 
     test('Result.failure mengembalikan exception dan isFailure bernilai true', () {
       const exception = NetworkException();
-      final Result<String> result = Result.failure(exception);
+      const Result<String> result = Result.failure(exception);
 
       expect(result.isSuccess, isFalse);
       expect(result.isFailure, isTrue);

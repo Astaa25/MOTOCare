@@ -2,7 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../features/auth/presentation/auth_state_provider.dart';
+import '../../features/auth/presentation/forgot_password_screen.dart';
+import '../../features/auth/presentation/login_screen.dart';
+import '../../features/auth/presentation/register_screen.dart';
 import '../../features/auth/presentation/splash_screen.dart';
+import '../../features/profile/presentation/edit_profile_screen.dart';
+import '../../features/profile/presentation/profile_screen.dart';
 import '../widgets/component_catalog_screen.dart';
 import '../widgets/placeholder_screen.dart';
 
@@ -72,61 +77,15 @@ final routerProvider = Provider<GoRouter>((ref) {
       // Autentikasi (M2)
       GoRoute(
         path: '/login',
-        builder: (context, state) => Scaffold(
-          appBar: AppBar(title: const Text('Masuk')),
-          body: Center(
-            child: Padding(
-              padding: const EdgeInsets.all(24.0),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: <Widget>[
-                  Text(
-                    'Masuk ke MotoCare',
-                    style: Theme.of(context).textTheme.titleLarge,
-                  ),
-                  const SizedBox(height: 12),
-                  const Text(
-                    'Layar login lengkap akan diimplementasikan pada Milestone M2.',
-                    textAlign: TextAlign.center,
-                  ),
-                  const SizedBox(height: 24),
-                  ElevatedButton(
-                    onPressed: () {
-                      ref.read(authStateProvider.notifier).setAuthenticated(
-                            userId: 'demo-user-id',
-                            email: 'pengguna.demo@motocare.id',
-                          );
-                    },
-                    child: const Text('Masuk (Simulasi Demo M0)'),
-                  ),
-                  const SizedBox(height: 12),
-                  TextButton(
-                    onPressed: () => context.push('/register'),
-                    child: const Text('Belum punya akun? Daftar'),
-                  ),
-                  TextButton(
-                    onPressed: () => context.push('/forgot-password'),
-                    child: const Text('Lupa Kata Sandi?'),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ),
+        builder: (context, state) => const LoginScreen(),
       ),
       GoRoute(
         path: '/register',
-        builder: (context, state) => const PlaceholderScreen(
-          title: 'Daftar Akun Baru',
-          milestone: 'M2',
-        ),
+        builder: (context, state) => const RegisterScreen(),
       ),
       GoRoute(
         path: '/forgot-password',
-        builder: (context, state) => const PlaceholderScreen(
-          title: 'Lupa Kata Sandi',
-          milestone: 'M2',
-        ),
+        builder: (context, state) => const ForgotPasswordScreen(),
       ),
 
       // Beranda (M3, M5)
@@ -365,17 +324,11 @@ final routerProvider = Provider<GoRouter>((ref) {
       // Profil (M2)
       GoRoute(
         path: '/profile',
-        builder: (context, state) => const PlaceholderScreen(
-          title: 'Profil Pengguna',
-          milestone: 'M2',
-        ),
+        builder: (context, state) => const ProfileScreen(),
         routes: <RouteBase>[
           GoRoute(
             path: 'edit',
-            builder: (context, state) => const PlaceholderScreen(
-              title: 'Ubah Profil',
-              milestone: 'M2',
-            ),
+            builder: (context, state) => const EditProfileScreen(),
           ),
         ],
       ),
