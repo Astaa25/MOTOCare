@@ -56,6 +56,27 @@ abstract class AppColors {
     ],
   );
 
+  /// Gradasi kartu kendaraan dashboard (#FFF0E3 → #FFD0A6)
+  static const LinearGradient vehicleCardGradient = LinearGradient(
+    begin: Alignment.topLeft,
+    end: Alignment.bottomRight,
+    colors: <Color>[
+      Color(0xFFFFF0E3), // Soft Cream
+      Color(0xFFFFD0A6), // Peach Orange
+    ],
+  );
+
+  /// Rekomendasi gradien utama: Soft Cream → Peach → Warm Orange
+  static const LinearGradient heroCareGradient = LinearGradient(
+    begin: Alignment.topLeft,
+    end: Alignment.bottomRight,
+    colors: <Color>[
+      Color(0xFFFFF0E3), // Soft Cream
+      Color(0xFFFFD0A6), // Peach Orange
+      Color(0xFFFF9B54), // Soft / Warm Orange
+    ],
+  );
+
   /// Gradasi aksen tombol atau badge
   static const LinearGradient primaryGradient = LinearGradient(
     begin: Alignment.topLeft,

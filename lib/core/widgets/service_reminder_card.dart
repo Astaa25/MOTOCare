@@ -50,12 +50,16 @@ class ServiceReminderCard extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: AppColors.background,
+          color: status == 'overdue'
+              ? const Color(0xFFFFF2F2) // Latar merah lembut untuk terlambat
+              : (status == 'near'
+                  ? const Color(0xFFFFF7F0) // Latar krem-oranye untuk mendekati
+                  : AppColors.background),
           borderRadius: BorderRadius.circular(16),
           border: Border.all(
-            color: isSevere
-                ? (status == 'overdue' ? AppColors.error : AppColors.warning)
-                : AppColors.border,
+            color: status == 'overdue'
+                ? AppColors.error
+                : (status == 'near' ? AppColors.orangeSoft : AppColors.border),
             width: isSevere ? 1.5 : 1.0,
           ),
           boxShadow: <BoxShadow>[
@@ -63,7 +67,7 @@ class ServiceReminderCard extends StatelessWidget {
               color: isSevere
                   ? (status == 'overdue'
                       ? AppColors.error.withValues(alpha: 0.08)
-                      : AppColors.warning.withValues(alpha: 0.08))
+                      : AppColors.primary.withValues(alpha: 0.08))
                   : Colors.black.withValues(alpha: 0.03),
               blurRadius: 8,
               offset: const Offset(0, 3),

@@ -10,6 +10,7 @@ class MotorcycleCard extends StatelessWidget {
   final String? licensePlate;
   final int currentMileage;
   final DateTime? mileageUpdatedAt;
+  final Widget? statusBadge;
   final VoidCallback? onUpdateMileage;
   final VoidCallback? onViewServices;
   final VoidCallback? onViewReminders;
@@ -23,6 +24,7 @@ class MotorcycleCard extends StatelessWidget {
     this.licensePlate,
     required this.currentMileage,
     this.mileageUpdatedAt,
+    this.statusBadge,
     this.onUpdateMileage,
     this.onViewServices,
     this.onViewReminders,
@@ -50,11 +52,11 @@ class MotorcycleCard extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: <Widget>[
-            // Header kartu dengan ikon dan nama motor
+            // Header kartu dengan gradien #FFF0E3 → #FFD0A6 (Soft Cream → Peach Orange)
             Container(
               padding: const EdgeInsets.all(16),
               decoration: const BoxDecoration(
-                color: AppColors.cream,
+                gradient: AppColors.vehicleCardGradient,
                 borderRadius: BorderRadius.vertical(top: Radius.circular(15)),
               ),
               child: Row(
@@ -121,6 +123,7 @@ class MotorcycleCard extends StatelessWidget {
                       ],
                     ),
                   ),
+                  ?statusBadge,
                 ],
               ),
             ),
