@@ -13,6 +13,10 @@ import '../../features/motorcycles/presentation/motorcycles_screen.dart';
 import '../../features/motorcycles/presentation/update_mileage_screen.dart';
 import '../../features/profile/presentation/edit_profile_screen.dart';
 import '../../features/profile/presentation/profile_screen.dart';
+import '../../features/notifications/presentation/notifications_screen.dart';
+import '../../features/reminders/presentation/add_edit_reminder_screen.dart';
+import '../../features/reminders/presentation/reminder_detail_screen.dart';
+import '../../features/reminders/presentation/reminders_screen.dart';
 import '../../features/service_history/presentation/add_edit_service_history_screen.dart';
 import '../../features/service_history/presentation/service_history_detail_screen.dart';
 import '../../features/service_history/presentation/service_history_screen.dart';
@@ -139,11 +143,24 @@ final routerProvider = Provider<GoRouter>((ref) {
                     path: 'new',
                     builder: (context, state) {
                       final extra = state.extra as Map<String, dynamic>?;
+                      final query = state.uri.queryParameters;
+                      final String? prefilledType =
+                          extra?['serviceType'] as String? ?? query['prefilledType'];
+                      final int? prefilledMileage = extra?['mileage'] as int? ??
+                          (query['prefilledMileage'] != null
+                              ? int.tryParse(query['prefilledMileage']!)
+                              : null);
+                      final String? prefilledDescription =
+                          extra?['description'] as String? ?? query['prefilledDesc'];
+                      final String? reminderId =
+                          extra?['reminderId'] as String? ?? query['reminderId'];
+
                       return AddEditServiceHistoryScreen(
                         motorcycleId: state.pathParameters['id']!,
-                        initialServiceType: extra?['serviceType'] as String?,
-                        initialMileage: extra?['mileage'] as int?,
-                        initialDescription: extra?['description'] as String?,
+                        initialServiceType: prefilledType,
+                        initialMileage: prefilledMileage,
+                        initialDescription: prefilledDescription,
+                        reminderId: reminderId,
                       );
                     },
                   ),
@@ -151,9 +168,8 @@ final routerProvider = Provider<GoRouter>((ref) {
               ),
               GoRoute(
                 path: 'reminders',
-                builder: (context, state) => PlaceholderScreen(
-                  title: 'Pengingat Motor #${state.pathParameters['id']}',
-                  milestone: 'M5',
+                builder: (context, state) => RemindersScreen(
+                  motorcycleId: state.pathParameters['id']!,
                 ),
               ),
             ],
@@ -172,24 +188,27 @@ final routerProvider = Provider<GoRouter>((ref) {
       // Pengingat (M5)
       GoRoute(
         path: '/reminders/new',
-        builder: (context, state) => const PlaceholderScreen(
-          title: 'Buat Pengingat Baru',
-          milestone: 'M5',
+        builder: (context, state) => AddEditReminderScreen(
+          motorcycleId: state.uri.queryParameters['motorId'],
         ),
       ),
       GoRoute(
         path: '/reminders/:id',
-        builder: (context, state) => PlaceholderScreen(
-          title: 'Detail Pengingat #${state.pathParameters['id']}',
-          milestone: 'M5',
+        builder: (context, state) => ReminderDetailScreen(
+          reminderId: state.pathParameters['id']!,
         ),
+        routes: <RouteBase>[
+          GoRoute(
+            path: 'edit',
+            builder: (context, state) => AddEditReminderScreen(
+              reminderId: state.pathParameters['id']!,
+            ),
+          ),
+        ],
       ),
       GoRoute(
         path: '/notifications',
-        builder: (context, state) => const PlaceholderScreen(
-          title: 'Pusat Notifikasi',
-          milestone: 'M5',
-        ),
+        builder: (context, state) => const NotificationsScreen(),
       ),
 
       // Bengkel (M6)

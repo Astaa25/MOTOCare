@@ -42,4 +42,9 @@ abstract class AppFormatters {
   static String licensePlate(String plate) {
     return plate.trim().toUpperCase();
   }
+
+  /// Alias pembantu untuk konsistensi penamaan
+  static String formatKilometer(int km) => mileage(km);
+  static String formatDate(DateTime date) => dateShort(date);
+  static String formatRupiah(num amount) => rupiah(amount);
 }

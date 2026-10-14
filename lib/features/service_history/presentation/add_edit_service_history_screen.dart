@@ -8,6 +8,7 @@ import '../../../core/widgets/app_dialogs.dart';
 import '../../../core/widgets/app_text_field.dart';
 import '../../../core/widgets/primary_button.dart';
 import '../domain/service_history.dart';
+import '../../reminders/presentation/reminders_providers.dart';
 import 'service_history_providers.dart';
 
 /// Layar Tambah / Ubah Catatan Servis sesuai PRD 7 M4
@@ -17,6 +18,7 @@ class AddEditServiceHistoryScreen extends ConsumerStatefulWidget {
   final String? initialServiceType;
   final int? initialMileage;
   final String? initialDescription;
+  final String? reminderId;
 
   const AddEditServiceHistoryScreen({
     super.key,
@@ -25,6 +27,7 @@ class AddEditServiceHistoryScreen extends ConsumerStatefulWidget {
     this.initialServiceType,
     this.initialMileage,
     this.initialDescription,
+    this.reminderId,
   });
 
   bool get isEditing => existingService != null;
@@ -175,6 +178,16 @@ class _AddEditServiceHistoryScreenState
 
       result.when(
         onSuccess: (_) async {
+          if (widget.reminderId != null) {
+            await ref.read(remindersNotifierProvider.notifier).completeReminder(
+                  widget.reminderId!,
+                  widget.motorcycleId,
+                  serviceMileage: mileage,
+                  serviceDate: _selectedDate,
+                );
+          }
+
+          if (!mounted) return;
           await SuccessDialog.show(
             context,
             title: 'Servis Berhasil Dicatat',
