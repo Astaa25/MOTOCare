@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import '../../../core/config/env.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/utils/validators.dart';
 import '../../../core/widgets/app_text_field.dart';
@@ -182,24 +181,6 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                     isLoading: authState.isLoading,
                     onPressed: _handleLogin,
                   ),
-
-                  // Helper Demo Mode
-                  if (AppEnv.useMock) ...<Widget>[
-                    const SizedBox(height: 16),
-                    OutlinedButton.icon(
-                      key: const Key('login_demo_fill_button'),
-                      onPressed: () {
-                        _emailController.text = 'pengguna.demo@motocare.id';
-                        _passwordController.text = 'Password123';
-                      },
-                      icon: const Icon(Icons.auto_fix_high_rounded, size: 16),
-                      label: const Text('Isi Akun Demo Otomatis'),
-                      style: OutlinedButton.styleFrom(
-                        foregroundColor: AppColors.primaryText,
-                        side: const BorderSide(color: AppColors.peach),
-                      ),
-                    ),
-                  ],
 
                   const SizedBox(height: 24),
 

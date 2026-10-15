@@ -14,6 +14,12 @@ class MockAuthRepository implements AuthRepository {
   static const String demoEmail = 'pengguna.demo@motocare.id';
   static const String demoPassword = 'Password123';
 
+  // Akun mekanik mitra
+  static const String mechanicEmail = 'budi.mekanik@motocare.id';
+
+  // Akun administrator
+  static const String adminEmail = 'admin@motocare.id';
+
   MockAuthRepository({bool startAuthenticated = false}) {
     if (startAuthenticated) {
       _currentUser = UserProfile(
@@ -40,21 +46,55 @@ class MockAuthRepository implements AuthRepository {
 
     final trimmedEmail = email.trim().toLowerCase();
 
-    // Verifikasi kredensial demo atau akun yang baru didaftarkan
-    if ((trimmedEmail == demoEmail && password == demoPassword) ||
-        (_currentUser != null &&
-            _currentUser!.email.toLowerCase() == trimmedEmail &&
-            password == demoPassword)) {
-      _currentUser = _currentUser ??
-          UserProfile(
-            id: 'demo-user-id-001',
-            email: demoEmail,
-            fullName: 'Abrar Pengguna Demo',
-            phone: '081234567890',
-            role: 'user',
-            createdAt: DateTime(2026, 1, 1),
-            updatedAt: DateTime.now(),
-          );
+    // 1. Akun Pengguna Biasa
+    if ((trimmedEmail == demoEmail || trimmedEmail == 'demo@motocare.id') && password == demoPassword) {
+      _currentUser = UserProfile(
+        id: 'demo-user-id-001',
+        email: demoEmail,
+        fullName: 'Abrar Pengguna Demo',
+        phone: '081234567890',
+        role: 'user',
+        createdAt: DateTime(2026, 1, 1),
+        updatedAt: DateTime.now(),
+      );
+      _authStreamController.add(_currentUser);
+      return Result.success(_currentUser!);
+    }
+
+    // 2. Akun Mekanik Mitra
+    if (trimmedEmail == mechanicEmail && password == demoPassword) {
+      _currentUser = UserProfile(
+        id: 'demo-mechanic-id-001',
+        email: mechanicEmail,
+        fullName: 'Budi Santoso (Mekanik Mitra)',
+        phone: '081200000001',
+        role: 'mechanic',
+        createdAt: DateTime(2026, 1, 1),
+        updatedAt: DateTime.now(),
+      );
+      _authStreamController.add(_currentUser);
+      return Result.success(_currentUser!);
+    }
+
+    // 3. Akun Administrator
+    if (trimmedEmail == adminEmail && password == demoPassword) {
+      _currentUser = UserProfile(
+        id: 'demo-admin-id-001',
+        email: adminEmail,
+        fullName: 'Administrator MotoCare',
+        phone: '081299999999',
+        role: 'admin',
+        createdAt: DateTime(2026, 1, 1),
+        updatedAt: DateTime.now(),
+      );
+      _authStreamController.add(_currentUser);
+      return Result.success(_currentUser!);
+    }
+
+    // 4. Akun yang baru didaftarkan lewat form register
+    if (_currentUser != null &&
+        _currentUser!.email.toLowerCase() == trimmedEmail &&
+        password == demoPassword) {
       _authStreamController.add(_currentUser);
       return Result.success(_currentUser!);
     }

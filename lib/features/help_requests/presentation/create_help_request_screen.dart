@@ -496,13 +496,19 @@ class _CreateHelpRequestScreenState
 
                   return DropdownButtonFormField<String>(
                     key: const Key('select_motorcycle_dropdown'),
+                    isExpanded: true,
                     initialValue: _selectedMotorcycleId,
                     items: motors.map((m) {
                       final label =
                           '${m.brand} ${m.model} (${m.licensePlate ?? "-"})';
                       return DropdownMenuItem<String>(
                         value: m.id,
-                        child: Text(label, style: const TextStyle(fontSize: 13)),
+                        child: Text(
+                          label,
+                          style: const TextStyle(fontSize: 13),
+                          overflow: TextOverflow.ellipsis,
+                          maxLines: 1,
+                        ),
                       );
                     }).toList(),
                     onChanged: (val) {

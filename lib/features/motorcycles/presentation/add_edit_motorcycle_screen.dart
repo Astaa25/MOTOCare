@@ -228,8 +228,63 @@ class _AddEditMotorcycleScreenState
                   const SizedBox(height: 16),
                 ],
 
+                // Rekomendasi Cepat Model Riil Indonesia
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: <Widget>[
+                    const Text(
+                      'Pilihan Cepat Model Riil Populer:',
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                        color: AppColors.textSecondary,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    SingleChildScrollView(
+                      scrollDirection: Axis.horizontal,
+                      child: Row(
+                        children: const <(String, String)>[
+                          ('Honda', 'BeAT'),
+                          ('Honda', 'Vario 160'),
+                          ('Honda', 'Scoopy'),
+                          ('Honda', 'PCX 160'),
+                          ('Yamaha', 'NMAX 155'),
+                          ('Yamaha', 'Aerox 155'),
+                          ('Yamaha', 'Mio M3'),
+                          ('Suzuki', 'Nex II'),
+                        ].map((pair) {
+                          return Padding(
+                            padding: const EdgeInsets.only(right: 8),
+                            child: ActionChip(
+                              key: Key('quick_motor_${pair.$1}_${pair.$2}'.replaceAll(' ', '_')),
+                              avatar: const Icon(Icons.two_wheeler_rounded, size: 16, color: AppColors.primary),
+                              label: Text('${pair.$1} ${pair.$2}'),
+                              backgroundColor: Colors.white,
+                              side: const BorderSide(color: AppColors.peach),
+                              labelStyle: const TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.w600,
+                                color: AppColors.textPrimary,
+                              ),
+                              onPressed: () {
+                                setState(() {
+                                  _brandController.text = pair.$1;
+                                  _modelController.text = pair.$2;
+                                });
+                              },
+                            ),
+                          );
+                        }).toList(),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 16),
+
                 // Merek Motor
                 AppTextField(
+                  key: const Key('motorcycle_brand_field'),
                   controller: _brandController,
                   label: 'Merek Motor',
                   hint: 'Contoh: Honda, Yamaha, Suzuki',

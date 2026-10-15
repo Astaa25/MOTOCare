@@ -16,7 +16,7 @@ class MockMotorcycleRepository implements MotorcycleRepository {
     this.simulateDelay = false,
   }) {
     if (populateDemoData) {
-      _motorcycles.add(
+      _motorcycles.addAll(<Motorcycle>[
         Motorcycle(
           id: 'demo-motor-1',
           userId: 'demo-user-id',
@@ -29,7 +29,55 @@ class MockMotorcycleRepository implements MotorcycleRepository {
           createdAt: DateTime.now().subtract(const Duration(days: 60)),
           updatedAt: DateTime.now().subtract(const Duration(days: 5)),
         ),
-      );
+        Motorcycle(
+          id: 'demo-motor-2',
+          userId: 'demo-user-id',
+          brand: 'Yamaha',
+          model: 'NMAX 155 Connected',
+          productionYear: 2022,
+          licensePlate: 'BL 6812 KP',
+          currentMileage: 24100,
+          mileageUpdatedAt: DateTime.now().subtract(const Duration(days: 3)),
+          createdAt: DateTime.now().subtract(const Duration(days: 120)),
+          updatedAt: DateTime.now().subtract(const Duration(days: 3)),
+        ),
+        Motorcycle(
+          id: 'demo-motor-3',
+          userId: 'demo-user-id',
+          brand: 'Honda',
+          model: 'BeAT Deluxe eSP',
+          productionYear: 2021,
+          licensePlate: 'BL 3190 QA',
+          currentMileage: 31800,
+          mileageUpdatedAt: DateTime.now().subtract(const Duration(days: 35)),
+          createdAt: DateTime.now().subtract(const Duration(days: 200)),
+          updatedAt: DateTime.now().subtract(const Duration(days: 35)),
+        ),
+        Motorcycle(
+          id: 'demo-motor-4',
+          userId: 'demo-user-id',
+          brand: 'Yamaha',
+          model: 'Aerox 155 CyberCity',
+          productionYear: 2023,
+          licensePlate: 'BL 5542 AB',
+          currentMileage: 8200,
+          mileageUpdatedAt: DateTime.now().subtract(const Duration(days: 8)),
+          createdAt: DateTime.now().subtract(const Duration(days: 90)),
+          updatedAt: DateTime.now().subtract(const Duration(days: 8)),
+        ),
+        Motorcycle(
+          id: 'demo-motor-5',
+          userId: 'demo-user-id',
+          brand: 'Honda',
+          model: 'Scoopy Prestige',
+          productionYear: 2022,
+          licensePlate: 'BL 2981 LM',
+          currentMileage: 16500,
+          mileageUpdatedAt: DateTime.now().subtract(const Duration(days: 12)),
+          createdAt: DateTime.now().subtract(const Duration(days: 150)),
+          updatedAt: DateTime.now().subtract(const Duration(days: 12)),
+        ),
+      ]);
     }
   }
 
