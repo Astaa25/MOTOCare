@@ -6,7 +6,6 @@ import '../../../core/theme/app_colors.dart';
 import '../../../core/widgets/error_state.dart';
 import '../../../core/widgets/loading_skeleton.dart';
 import '../../../core/widgets/primary_button.dart';
-import '../../../core/widgets/status_chip.dart';
 import '../domain/tutorial.dart';
 import 'tutorials_providers.dart';
 
@@ -181,157 +180,74 @@ class _TutorialDetailScreenState extends ConsumerState<TutorialDetailScreen> {
             }
 
             return ListView(
-              padding: const EdgeInsets.all(16),
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
               children: <Widget>[
-                // Card Media Preview dengan Tombol Play YouTube
-                Container(
-                  height: 200,
-                  decoration: BoxDecoration(
-                    gradient: const LinearGradient(
-                      colors: <Color>[AppColors.cream, AppColors.peach],
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
+                // Ikon Topik Soft Butter (Figma 06.02)
+                Align(
+                  alignment: Alignment.centerLeft,
+                  child: Container(
+                    width: 52,
+                    height: 52,
+                    decoration: BoxDecoration(
+                      color: AppColors.softButter,
+                      borderRadius: BorderRadius.circular(16),
                     ),
-                    borderRadius: BorderRadius.circular(18),
-                    border: Border.all(color: AppColors.peach, width: 1.5),
-                  ),
-                  child: Stack(
-                    alignment: Alignment.center,
-                    children: <Widget>[
-                      Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: <Widget>[
-                          Container(
-                            width: 64,
-                            height: 64,
-                            decoration: const BoxDecoration(
-                              color: AppColors.primary,
-                              shape: BoxShape.circle,
-                              boxShadow: <BoxShadow>[
-                                BoxShadow(
-                                  color: Color(0x33F97316),
-                                  blurRadius: 16,
-                                  offset: Offset(0, 4),
-                                ),
-                              ],
-                            ),
-                            child: const Icon(
-                              Icons.play_arrow_rounded,
-                              size: 40,
-                              color: Colors.white,
-                            ),
-                          ),
-                          const SizedBox(height: 12),
-                          const Text(
-                            'Video Panduan Perawatan',
-                            style: TextStyle(
-                              fontSize: 13,
-                              fontWeight: FontWeight.w700,
-                              color: AppColors.textPrimary,
-                            ),
-                          ),
-                        ],
-                      ),
-                      Positioned(
-                        top: 12,
-                        right: 12,
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 10,
-                            vertical: 4,
-                          ),
-                          decoration: BoxDecoration(
-                            color: Colors.white.withValues(alpha: 0.9),
-                            borderRadius: BorderRadius.circular(12),
-                            border: Border.all(color: AppColors.border),
-                          ),
-                          child: const Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: <Widget>[
-                              Icon(
-                                Icons.ondemand_video_rounded,
-                                size: 14,
-                                color: Colors.red,
-                              ),
-                              SizedBox(width: 4),
-                              Text(
-                                'YouTube Video',
-                                style: TextStyle(
-                                  fontSize: 11,
-                                  fontWeight: FontWeight.w700,
-                                  color: AppColors.textPrimary,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 20),
-
-                // Topik Chip
-                Row(
-                  children: <Widget>[
-                    StatusChip(
-                      label: tutorial.topic,
-                      icon: Icons.play_lesson_rounded,
-                      backgroundColor: AppColors.cream,
-                      textColor: AppColors.primaryText,
-                      borderColor: AppColors.peach,
+                    child: const Icon(
+                      Icons.two_wheeler_rounded,
+                      color: AppColors.deepTeal,
+                      size: 26,
                     ),
-                  ],
-                ),
-                const SizedBox(height: 12),
-
-                // Judul
-                Text(
-                  tutorial.title,
-                  style: const TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.w800,
-                    color: AppColors.textPrimary,
-                    height: 1.3,
                   ),
                 ),
                 const SizedBox(height: 16),
 
-                // Deskripsi
-                if (tutorial.description != null &&
-                    tutorial.description!.isNotEmpty) ...<Widget>[
-                  const Text(
-                    'Langkah dan Panduan',
-                    style: TextStyle(
-                      fontSize: 15,
-                      fontWeight: FontWeight.w700,
-                      color: AppColors.textPrimary,
-                    ),
+                // Judul Panduan
+                Text(
+                  tutorial.title,
+                  style: const TextStyle(
+                    fontSize: 22,
+                    fontWeight: FontWeight.w800,
+                    color: AppColors.deepTeal,
+                    height: 1.25,
                   ),
-                  const SizedBox(height: 8),
-                  Container(
-                    padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(14),
-                      border: Border.all(color: AppColors.border),
-                    ),
-                    child: Text(
-                      tutorial.description!,
-                      style: const TextStyle(
-                        fontSize: 14,
-                        color: AppColors.textPrimary,
-                        height: 1.5,
-                      ),
-                    ),
-                  ),
-                ],
-                const SizedBox(height: 32),
+                ),
+                const SizedBox(height: 8),
 
-                // Tombol Aksi Tonton di YouTube
+                // Subtitle / Keterangan Ringan (Figma 06.02)
+                Text(
+                  tutorial.description ?? 'Pemeriksaan ringan saat motor berhenti di tempat yang aman.',
+                  style: const TextStyle(
+                    fontSize: 13.5,
+                    color: AppColors.textSecondary,
+                    height: 1.4,
+                  ),
+                ),
+                const SizedBox(height: 24),
+
+                // Langkah Pemeriksaan Bernomor (Figma 06.02)
+                _buildNumberedStep(
+                  number: '1',
+                  title: 'Periksa fisik dan baut',
+                  description: 'Lihat apakah komponen terpasang kencang dan tidak ada kebocoran cairan.',
+                ),
+                const SizedBox(height: 16),
+                _buildNumberedStep(
+                  number: '2',
+                  title: 'Coba fungsi dan kinerja',
+                  description: 'Pastikan komponen merespons dengan normal sesuai petunjuk pemakaian.',
+                ),
+                const SizedBox(height: 16),
+                _buildNumberedStep(
+                  number: '3',
+                  title: 'Dengarkan perubahan',
+                  description: 'Bila muncul suara atau getaran yang tidak biasa, segera periksa lebih lanjut.',
+                ),
+                const SizedBox(height: 28),
+
+                // Tombol Aksi Tonton di YouTube (Figma 06.02: Cari video di YouTube)
                 PrimaryButton(
                   key: const Key('watch_on_youtube_button'),
-                  label: _isLaunching ? 'Membuka YouTube...' : 'Tonton di YouTube',
+                  label: _isLaunching ? 'Membuka YouTube...' : 'Cari video di YouTube',
                   icon: Icons.play_arrow_rounded,
                   isLoading: _isLaunching,
                   onPressed: () => _launchYouTube(tutorial.youtubeUrl),
@@ -361,12 +277,66 @@ class _TutorialDetailScreenState extends ConsumerState<TutorialDetailScreen> {
                     },
                   ),
                 ),
-                const SizedBox(height: 24),
+                const SizedBox(height: 20),
               ],
             );
           },
         ),
       ),
+    );
+  }
+
+  Widget _buildNumberedStep({
+    required String number,
+    required String title,
+    required String description,
+  }) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: <Widget>[
+        Container(
+          width: 32,
+          height: 32,
+          decoration: const BoxDecoration(
+            color: AppColors.softMint,
+            shape: BoxShape.circle,
+          ),
+          alignment: Alignment.center,
+          child: Text(
+            number,
+            style: const TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.w700,
+              color: AppColors.deepTeal,
+            ),
+          ),
+        ),
+        const SizedBox(width: 14),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: <Widget>[
+              Text(
+                title,
+                style: const TextStyle(
+                  fontSize: 14.5,
+                  fontWeight: FontWeight.w700,
+                  color: AppColors.deepTeal,
+                ),
+              ),
+              const SizedBox(height: 3),
+              Text(
+                description,
+                style: const TextStyle(
+                  fontSize: 12.5,
+                  color: AppColors.textSecondary,
+                  height: 1.35,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
     );
   }
 }

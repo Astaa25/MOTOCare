@@ -90,12 +90,64 @@ enum RequestStatus {
     }
   }
 
-  static RequestStatus fromString(String value) {
-    for (final status in RequestStatus.values) {
-      if (status.dbValue == value || status.name == value) {
-        return status;
-      }
+  /// Konversi ke nilai enum PostgreSQL pada tabel assistance_requests Supabase live
+  String get toLiveDbValue {
+    switch (this) {
+      case RequestStatus.pending:
+        return 'MENUNGGU';
+      case RequestStatus.accepted:
+      case RequestStatus.onTheWay:
+        return 'DITERIMA';
+      case RequestStatus.inProgress:
+        return 'SEDANG_DITANGANI';
+      case RequestStatus.completed:
+        return 'SELESAI';
+      case RequestStatus.rejected:
+        return 'DITOLAK';
+      case RequestStatus.cancelled:
+      case RequestStatus.expired:
+        return 'DIBATALKAN';
     }
-    return RequestStatus.pending;
+  }
+
+  static RequestStatus fromString(String value) {
+    final clean = value.toUpperCase().trim();
+    switch (clean) {
+      case 'MENUNGGU':
+      case 'PENDING':
+        return RequestStatus.pending;
+      case 'DITERIMA':
+      case 'ACCEPTED':
+        return RequestStatus.accepted;
+      case 'ON_THE_WAY':
+      case 'DALAM_PERJALANAN':
+      case 'BERANGKAT':
+        return RequestStatus.onTheWay;
+      case 'SEDANG_DITANGANI':
+      case 'IN_PROGRESS':
+        return RequestStatus.inProgress;
+      case 'SELESAI':
+      case 'COMPLETED':
+        return RequestStatus.completed;
+      case 'DIBATALKAN':
+      case 'CANCELLED':
+      case 'CANCELED':
+        return RequestStatus.cancelled;
+      case 'DITOLAK':
+      case 'REJECTED':
+        return RequestStatus.rejected;
+      case 'EXPIRED':
+      case 'KEDALUWARSA':
+      case 'KADALUARSA':
+        return RequestStatus.expired;
+      default:
+        for (final status in RequestStatus.values) {
+          if (status.dbValue.toUpperCase() == clean ||
+              status.name.toUpperCase() == clean) {
+            return status;
+          }
+        }
+        return RequestStatus.pending;
+    }
   }
 }

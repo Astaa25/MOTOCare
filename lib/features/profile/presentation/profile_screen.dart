@@ -1,15 +1,26 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import '../../../core/config/env.dart';
 import '../../../core/theme/app_colors.dart';
-import '../../../core/widgets/app_bottom_nav.dart';
+import '../../../core/theme/app_tokens.dart';
+import '../../../core/widgets/animated_effects.dart';
+import '../../../core/widgets/app_background.dart';
 import '../../../core/widgets/app_dialogs.dart';
-import '../../../core/widgets/status_chip.dart';
 import '../../auth/presentation/auth_state_provider.dart';
 
-/// Layar Profil Pengguna MotoCare sesuai PRD M2
+/// Layar Akun / Profil Pengguna MotoCare sesuai Figma 06.04 (Arah Visual Baru)
 class ProfileScreen extends ConsumerWidget {
   const ProfileScreen({super.key});
+
+  String _getInitials(String name) {
+    if (name.trim().isEmpty) return 'U';
+    final parts = name.trim().split(RegExp(r'\s+'));
+    if (parts.length >= 2) {
+      return '${parts[0][0]}${parts[1][0]}'.toUpperCase();
+    }
+    return parts[0][0].toUpperCase();
+  }
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -18,191 +29,295 @@ class ProfileScreen extends ConsumerWidget {
 
     final String displayName = user?.fullName ?? 'Pengguna MotoCare';
     final String email = user?.email ?? 'pengguna@motocare.id';
-    final String phone = user?.phone ?? 'Belum diatur';
-    final String role = user?.role == 'admin'
-        ? 'Admin'
-        : (user?.role == 'mechanic' ? 'Mekanik' : 'Pengguna');
+    final String roleDescription = user?.role == 'admin'
+        ? 'Administrator'
+        : (user?.role == 'mechanic' ? 'Mekanik mitra' : 'Pemilik kendaraan');
 
     return Scaffold(
+      backgroundColor: Colors.transparent,
       appBar: AppBar(
-        title: const Text('Profil Saya'),
+        title: const Text(
+          'Akun saya',
+          style: TextStyle(
+            fontSize: 20,
+            fontWeight: FontWeight.w800,
+            color: AppColors.deepTeal,
+          ),
+        ),
         automaticallyImplyLeading: false,
-      ),
-      bottomNavigationBar: AppBottomNav(
-        currentIndex: 4,
-        onTap: (index) {
-          switch (index) {
-            case 0:
-              context.go('/home');
-              break;
-            case 1:
-              context.go('/motors');
-              break;
-            case 2:
-              context.go('/workshops');
-              break;
-            case 3:
-              context.go('/tutorials');
-              break;
-            case 4:
-              break;
-          }
-        },
-      ),
-      body: ListView(
-        padding: const EdgeInsets.all(20.0),
-        children: <Widget>[
-          // Header profil dengan avatar inisial
-          Container(
-            padding: const EdgeInsets.all(20),
-            decoration: BoxDecoration(
-              color: AppColors.background,
-              borderRadius: BorderRadius.circular(20),
-              border: Border.all(color: AppColors.border),
-              boxShadow: <BoxShadow>[
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.03),
-                  blurRadius: 10,
-                  offset: const Offset(0, 4),
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        actions: <Widget>[
+          if (AppEnv.showDemoFeatures)
+            Container(
+              margin: const EdgeInsets.only(right: 16),
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+              decoration: BoxDecoration(
+                color: AppColors.softPeach,
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: const Text(
+                'Simulasi',
+                style: TextStyle(
+                  fontSize: 11,
+                  fontWeight: FontWeight.w700,
+                  color: AppColors.action,
                 ),
-              ],
+              ),
             ),
-            child: Column(
-              children: <Widget>[
-                Container(
-                  width: 72,
-                  height: 72,
-                  decoration: const BoxDecoration(
-                    shape: BoxShape.circle,
-                    gradient: AppColors.vehicleCardGradient,
-                  ),
-                  child: Center(
+        ],
+      ),
+      body: AppBackground(
+        child: ListView(
+          padding: const EdgeInsets.fromLTRB(20, 12, 20, AppTokens.tabContentBottomPadding),
+          children: <Widget>[
+            // --- KARTU PROFIL UTAMA (FIGMA 06.04) ---
+            Container(
+              padding: const EdgeInsets.all(18),
+              decoration: BoxDecoration(
+                color: AppColors.softMint,
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(color: const Color(0xFFCDE5DE)),
+              ),
+              child: Row(
+                children: <Widget>[
+                  CircleAvatar(
+                    radius: 28,
+                    backgroundColor: AppColors.deepTeal,
                     child: Text(
-                      displayName.isNotEmpty ? displayName[0].toUpperCase() : 'U',
+                      _getInitials(displayName),
                       style: const TextStyle(
-                        fontSize: 28,
+                        fontSize: 18,
                         fontWeight: FontWeight.w800,
-                        color: AppColors.primaryText,
+                        color: Colors.white,
                       ),
                     ),
                   ),
-                ),
-                const SizedBox(height: 14),
-                Text(
-                  displayName,
-                  style: const TextStyle(
-                    fontSize: 18,
+                  const SizedBox(width: 14),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: <Widget>[
+                        Text(
+                          displayName,
+                          style: const TextStyle(
+                            fontSize: 17,
+                            fontWeight: FontWeight.w800,
+                            color: AppColors.deepTeal,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          roleDescription,
+                          style: const TextStyle(
+                            fontSize: 13,
+                            color: AppColors.textSecondary,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                        Text(
+                          email,
+                          style: const TextStyle(
+                            fontSize: 11.5,
+                            color: AppColors.textSecondary,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 18),
+
+            // --- MENU PILIHAN (FIGMA 06.04) ---
+            _buildMenuItem(
+              key: const Key('profile_edit_button'),
+              icon: Icons.person_outline_rounded,
+              title: 'Edit profil',
+              subtitle: 'Nama, email, dan nomor HP',
+              onTap: () => context.push('/profile/edit'),
+            ),
+            const Divider(height: 1, color: Color(0xFFF0EAE1)),
+
+            _buildMenuItem(
+              icon: Icons.two_wheeler_rounded,
+              title: 'Motor saya',
+              subtitle: 'Data kendaraan dan perawatan',
+              onTap: () => context.push('/motors'),
+            ),
+            const Divider(height: 1, color: Color(0xFFF0EAE1)),
+
+            _buildMenuItem(
+              icon: Icons.notifications_none_rounded,
+              title: 'Pengaturan notifikasi',
+              subtitle: 'Status bantuan dan jadwal servis',
+              onTap: () => context.push('/notifications/settings'),
+            ),
+            const Divider(height: 1, color: Color(0xFFF0EAE1)),
+
+            _buildMenuItem(
+              icon: Icons.menu_book_rounded,
+              title: 'Tutorial perawatan',
+              subtitle: 'Panduan motor sehari-hari',
+              onTap: () => context.push('/tutorials'),
+            ),
+            const Divider(height: 1, color: Color(0xFFF0EAE1)),
+
+            const SizedBox(height: 16),
+
+            // --- KELUAR DARI AKUN (FIGMA 06.04) ---
+            InkWell(
+              key: const Key('profile_logout_button'),
+              borderRadius: BorderRadius.circular(8),
+              onTap: () async {
+                final confirm = await ConfirmationDialog.show(
+                  context,
+                  title: 'Keluar dari Akun?',
+                  message: 'Sesi Anda akan dihentikan dan Anda perlu masuk kembali.',
+                  confirmLabel: 'Ya, Keluar',
+                  cancelLabel: 'Batal',
+                  isDestructive: true,
+                );
+
+                if (confirm == true) {
+                  await ref.read(authStateProvider.notifier).signOut();
+                }
+              },
+              child: const Padding(
+                padding: EdgeInsets.symmetric(vertical: 10),
+                child: Text(
+                  'Keluar dari akun',
+                  style: TextStyle(
+                    color: AppColors.action,
                     fontWeight: FontWeight.w700,
-                    color: AppColors.textPrimary,
-                  ),
-                  textAlign: TextAlign.center,
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  email,
-                  style: const TextStyle(
-                    fontSize: 13,
-                    color: AppColors.textSecondary,
+                    fontSize: 14,
                   ),
                 ),
-                const SizedBox(height: 10),
-                StatusChip(
-                  label: role,
-                  icon: Icons.shield_outlined,
-                  backgroundColor: AppColors.cream,
-                  textColor: AppColors.primaryText,
-                ),
-              ],
+              ),
             ),
-          ),
-          const SizedBox(height: 20),
 
-          // Informasi Akun Detail
-          Material(
-            color: AppColors.background,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(16),
-              side: const BorderSide(color: AppColors.border),
-            ),
-            clipBehavior: Clip.antiAlias,
-            child: Column(
-              children: <Widget>[
-                ListTile(
-                  leading: const Icon(Icons.person_outline_rounded, color: AppColors.primary),
-                  title: const Text('Nama Lengkap', style: TextStyle(fontSize: 13, color: AppColors.textSecondary)),
-                  subtitle: Text(displayName, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: AppColors.textPrimary)),
+            // --- JELAJAHI PERAN DEMO (FIGMA 06.04) ---
+            if (AppEnv.showDemoFeatures) ...<Widget>[
+              const SizedBox(height: 16),
+              const Text(
+                'Jelajahi peran demo',
+                style: TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                  color: AppColors.textSecondary,
                 ),
-                const Divider(height: 1),
-                ListTile(
-                  leading: const Icon(Icons.phone_outlined, color: AppColors.primary),
-                  title: const Text('Nomor Telepon', style: TextStyle(fontSize: 13, color: AppColors.textSecondary)),
-                  subtitle: Text(phone, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: AppColors.textPrimary)),
-                ),
-                const Divider(height: 1),
-                const ListTile(
-                  leading: Icon(Icons.location_city_rounded, color: AppColors.primary),
-                  title: Text('Cakupan Wilayah Layanan', style: TextStyle(fontSize: 13, color: AppColors.textSecondary)),
-                  subtitle: Text(
-                    'Kota Lhokseumawe & Kab. Aceh Utara',
-                    style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: AppColors.textPrimary),
+              ),
+              const SizedBox(height: 10),
+              Wrap(
+                spacing: 20,
+                runSpacing: 8,
+                children: <Widget>[
+                  InkWell(
+                    onTap: () => context.push('/home'),
+                    child: const Padding(
+                      padding: EdgeInsets.symmetric(vertical: 4),
+                      child: Text(
+                        'Area mekanik',
+                        style: TextStyle(
+                          color: AppColors.action,
+                          fontWeight: FontWeight.w700,
+                          fontSize: 13,
+                        ),
+                      ),
+                    ),
+                  ),
+                  InkWell(
+                    onTap: () => context.push('/admin'),
+                    child: const Padding(
+                      padding: EdgeInsets.symmetric(vertical: 4),
+                      child: Text(
+                        'Area admin',
+                        style: TextStyle(
+                          color: AppColors.action,
+                          fontWeight: FontWeight.w700,
+                          fontSize: 13,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 20),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildMenuItem({
+    Key? key,
+    required IconData icon,
+    required String title,
+    required String subtitle,
+    required VoidCallback onTap,
+  }) {
+    return BouncingWidget(
+      onTap: onTap,
+      scaleFactor: 0.985,
+      hoverScale: 1.01,
+      child: InkWell(
+        key: key,
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(14),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 6),
+          child: Row(
+            children: <Widget>[
+              Container(
+                width: 44,
+                height: 44,
+                decoration: BoxDecoration(
+                  color: AppColors.softPeach,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(
+                    color: AppColors.coral.withValues(alpha: 0.25),
                   ),
                 ),
-              ],
-            ),
+                child: Icon(icon, color: AppColors.deepTeal, size: 22),
+              ),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: <Widget>[
+                    Text(
+                      title,
+                      style: const TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w700,
+                        color: AppColors.deepTeal,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      subtitle,
+                      style: const TextStyle(
+                        fontSize: 12,
+                        color: AppColors.textSecondary,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const Icon(
+                Icons.chevron_right_rounded,
+                color: AppColors.textSecondary,
+                size: 20,
+              ),
+            ],
           ),
-          const SizedBox(height: 20),
-
-          // Menu Aksi
-          Material(
-            color: AppColors.background,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(16),
-              side: const BorderSide(color: AppColors.border),
-            ),
-            clipBehavior: Clip.antiAlias,
-            child: Column(
-              children: <Widget>[
-                ListTile(
-                  key: const Key('profile_edit_button'),
-                  leading: const Icon(Icons.edit_outlined, color: AppColors.textPrimary),
-                  title: const Text('Ubah Profil', style: TextStyle(fontWeight: FontWeight.w600)),
-                  trailing: const Icon(Icons.chevron_right_rounded),
-                  onTap: () => context.push('/profile/edit'),
-                ),
-                const Divider(height: 1),
-                ListTile(
-                  leading: const Icon(Icons.palette_outlined, color: AppColors.textPrimary),
-                  title: const Text('Katalog Komponen UI (Debug)', style: TextStyle(fontWeight: FontWeight.w600)),
-                  trailing: const Icon(Icons.chevron_right_rounded),
-                  onTap: () => context.push('/catalog'),
-                ),
-                const Divider(height: 1),
-                ListTile(
-                  key: const Key('profile_logout_button'),
-                  leading: const Icon(Icons.logout_rounded, color: AppColors.error),
-                  title: const Text(
-                    'Keluar dari Akun',
-                    style: TextStyle(color: AppColors.error, fontWeight: FontWeight.w700),
-                  ),
-                  onTap: () async {
-                    final confirm = await ConfirmationDialog.show(
-                      context,
-                      title: 'Keluar dari Akun?',
-                      message: 'Sesi Anda akan dihentikan dan Anda perlu masuk kembali.',
-                      confirmLabel: 'Ya, Keluar',
-                      cancelLabel: 'Batal',
-                      isDestructive: true,
-                    );
-
-                    if (confirm == true) {
-                      await ref.read(authStateProvider.notifier).signOut();
-                    }
-                  },
-                ),
-              ],
-            ),
-          ),
-        ],
+        ),
       ),
     );
   }

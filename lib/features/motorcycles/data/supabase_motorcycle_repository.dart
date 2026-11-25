@@ -5,6 +5,7 @@ import '../domain/motorcycle.dart';
 import '../domain/motorcycle_repository.dart';
 
 /// Implementasi SupabaseMotorcycleRepository menggunakan client Supabase sesuai PRD M3
+/// Mendukung tabel `vehicles` (skema Supabase produksi live) dan fallback ke `motorcycles`
 class SupabaseMotorcycleRepository implements MotorcycleRepository {
   final SupabaseClient _client;
 
@@ -14,11 +15,20 @@ class SupabaseMotorcycleRepository implements MotorcycleRepository {
   @override
   Future<Result<List<Motorcycle>>> getMotorcycles({required String userId}) async {
     try {
-      final List<Map<String, dynamic>> response = await _client
-          .from('motorcycles')
-          .select()
-          .eq('user_id', userId)
-          .order('created_at', ascending: false);
+      List<Map<String, dynamic>> response;
+      try {
+        response = await _client
+            .from('vehicles')
+            .select()
+            .eq('owner_id', userId)
+            .order('created_at', ascending: false);
+      } catch (_) {
+        response = await _client
+            .from('motorcycles')
+            .select()
+            .eq('user_id', userId)
+            .order('created_at', ascending: false);
+      }
 
       final motorcycles = response.map(Motorcycle.fromJson).toList();
       return Result.success(motorcycles);
@@ -30,13 +40,24 @@ class SupabaseMotorcycleRepository implements MotorcycleRepository {
   @override
   Future<Result<Motorcycle?>> getActiveMotorcycle({required String userId}) async {
     try {
-      final response = await _client
-          .from('motorcycles')
-          .select()
-          .eq('user_id', userId)
-          .order('created_at', ascending: false)
-          .limit(1)
-          .maybeSingle();
+      Map<String, dynamic>? response;
+      try {
+        response = await _client
+            .from('vehicles')
+            .select()
+            .eq('owner_id', userId)
+            .order('created_at', ascending: false)
+            .limit(1)
+            .maybeSingle();
+      } catch (_) {
+        response = await _client
+            .from('motorcycles')
+            .select()
+            .eq('user_id', userId)
+            .order('created_at', ascending: false)
+            .limit(1)
+            .maybeSingle();
+      }
 
       if (response == null) {
         return const Result.success(null);
@@ -51,11 +72,20 @@ class SupabaseMotorcycleRepository implements MotorcycleRepository {
   @override
   Future<Result<Motorcycle>> getMotorcycleById(String id) async {
     try {
-      final response = await _client
-          .from('motorcycles')
-          .select()
-          .eq('id', id)
-          .single();
+      Map<String, dynamic> response;
+      try {
+        response = await _client
+            .from('vehicles')
+            .select()
+            .eq('id', id)
+            .single();
+      } catch (_) {
+        response = await _client
+            .from('motorcycles')
+            .select()
+            .eq('id', id)
+            .single();
+      }
 
       return Result.success(Motorcycle.fromJson(response));
     } catch (e) {
@@ -73,24 +103,40 @@ class SupabaseMotorcycleRepository implements MotorcycleRepository {
     required int currentMileage,
   }) async {
     try {
-      final now = DateTime.now().toIso8601String();
-      final response = await _client
-          .from('motorcycles')
-          .insert(<String, dynamic>{
-            'user_id': userId,
-            'brand': brand.trim(),
-            'model': model.trim(),
-            'production_year': productionYear,
-            'license_plate': licensePlate?.trim().toUpperCase(),
-            'current_mileage': currentMileage,
-            'mileage_updated_at': now,
-            'created_at': now,
-            'updated_at': now,
-          })
-          .select()
-          .single();
-
-      return Result.success(Motorcycle.fromJson(response));
+      try {
+        final response = await _client
+            .from('vehicles')
+            .insert(<String, dynamic>{
+              'owner_id': userId,
+              'brand': brand.trim(),
+              'model': model.trim(),
+              'production_year': productionYear,
+              'license_plate': licensePlate?.trim().toUpperCase(),
+              'current_km': currentMileage,
+              'is_simulation': false,
+            })
+            .select()
+            .single();
+        return Result.success(Motorcycle.fromJson(response));
+      } catch (_) {
+        final now = DateTime.now().toIso8601String();
+        final response = await _client
+            .from('motorcycles')
+            .insert(<String, dynamic>{
+              'user_id': userId,
+              'brand': brand.trim(),
+              'model': model.trim(),
+              'production_year': productionYear,
+              'license_plate': licensePlate?.trim().toUpperCase(),
+              'current_mileage': currentMileage,
+              'mileage_updated_at': now,
+              'created_at': now,
+              'updated_at': now,
+            })
+            .select()
+            .single();
+        return Result.success(Motorcycle.fromJson(response));
+      }
     } catch (e) {
       return Result.failure(AppException.fromError(e));
     }
@@ -100,18 +146,34 @@ class SupabaseMotorcycleRepository implements MotorcycleRepository {
   Future<Result<Motorcycle>> updateMotorcycle(Motorcycle motorcycle) async {
     try {
       final now = DateTime.now().toIso8601String();
-      final response = await _client
-          .from('motorcycles')
-          .update(<String, dynamic>{
-            'brand': motorcycle.brand.trim(),
-            'model': motorcycle.model.trim(),
-            'production_year': motorcycle.productionYear,
-            'license_plate': motorcycle.licensePlate?.trim().toUpperCase(),
-            'updated_at': now,
-          })
-          .eq('id', motorcycle.id)
-          .select()
-          .single();
+      Map<String, dynamic> response;
+      try {
+        response = await _client
+            .from('vehicles')
+            .update(<String, dynamic>{
+              'brand': motorcycle.brand.trim(),
+              'model': motorcycle.model.trim(),
+              'production_year': motorcycle.productionYear,
+              'license_plate': motorcycle.licensePlate?.trim().toUpperCase(),
+              'updated_at': now,
+            })
+            .eq('id', motorcycle.id)
+            .select()
+            .single();
+      } catch (_) {
+        response = await _client
+            .from('motorcycles')
+            .update(<String, dynamic>{
+              'brand': motorcycle.brand.trim(),
+              'model': motorcycle.model.trim(),
+              'production_year': motorcycle.productionYear,
+              'license_plate': motorcycle.licensePlate?.trim().toUpperCase(),
+              'updated_at': now,
+            })
+            .eq('id', motorcycle.id)
+            .select()
+            .single();
+      }
 
       return Result.success(Motorcycle.fromJson(response));
     } catch (e) {
@@ -126,16 +188,29 @@ class SupabaseMotorcycleRepository implements MotorcycleRepository {
   }) async {
     try {
       final now = DateTime.now().toIso8601String();
-      final response = await _client
-          .from('motorcycles')
-          .update(<String, dynamic>{
-            'current_mileage': newMileage,
-            'mileage_updated_at': now,
-            'updated_at': now,
-          })
-          .eq('id', motorcycleId)
-          .select()
-          .single();
+      Map<String, dynamic> response;
+      try {
+        response = await _client
+            .from('vehicles')
+            .update(<String, dynamic>{
+              'current_km': newMileage,
+              'updated_at': now,
+            })
+            .eq('id', motorcycleId)
+            .select()
+            .single();
+      } catch (_) {
+        response = await _client
+            .from('motorcycles')
+            .update(<String, dynamic>{
+              'current_mileage': newMileage,
+              'mileage_updated_at': now,
+              'updated_at': now,
+            })
+            .eq('id', motorcycleId)
+            .select()
+            .single();
+      }
 
       return Result.success(Motorcycle.fromJson(response));
     } catch (e) {
@@ -146,7 +221,11 @@ class SupabaseMotorcycleRepository implements MotorcycleRepository {
   @override
   Future<Result<void>> deleteMotorcycle(String id) async {
     try {
-      await _client.from('motorcycles').delete().eq('id', id);
+      try {
+        await _client.from('vehicles').delete().eq('id', id);
+      } catch (_) {
+        await _client.from('motorcycles').delete().eq('id', id);
+      }
       return const Result.success(null);
     } catch (e) {
       return Result.failure(AppException.fromError(e));
@@ -155,11 +234,20 @@ class SupabaseMotorcycleRepository implements MotorcycleRepository {
 
   @override
   Stream<List<Motorcycle>> watchMotorcycles({required String userId}) {
-    return _client
-        .from('motorcycles')
-        .stream(primaryKey: <String>['id'])
-        .eq('user_id', userId)
-        .order('created_at', ascending: false)
-        .map((list) => list.map(Motorcycle.fromJson).toList());
+    try {
+      return _client
+          .from('vehicles')
+          .stream(primaryKey: <String>['id'])
+          .eq('owner_id', userId)
+          .order('created_at', ascending: false)
+          .map((list) => list.map(Motorcycle.fromJson).toList());
+    } catch (_) {
+      return _client
+          .from('motorcycles')
+          .stream(primaryKey: <String>['id'])
+          .eq('user_id', userId)
+          .order('created_at', ascending: false)
+          .map((list) => list.map(Motorcycle.fromJson).toList());
+    }
   }
 }

@@ -7,13 +7,14 @@ enum StoredReminderStatus {
   completed;
 
   static StoredReminderStatus fromString(String val) {
-    if (val.toLowerCase() == 'completed') {
+    final clean = val.toUpperCase().trim();
+    if (clean == 'COMPLETED' || clean == 'SELESAI') {
       return StoredReminderStatus.completed;
     }
     return StoredReminderStatus.active;
   }
 
-  String get dbValue => name;
+  String get dbValue => this == StoredReminderStatus.completed ? 'SELESAI' : 'AKTIF';
 }
 
 /// Status dinamis hasil kalkulasi sesuai PRD Bagian 6.3

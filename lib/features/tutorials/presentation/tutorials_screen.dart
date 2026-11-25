@@ -1,9 +1,13 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import '../../../core/config/env.dart';
 import '../../../core/theme/app_colors.dart';
-import '../../../core/widgets/app_bottom_nav.dart';
+import '../../../core/theme/app_tokens.dart';
+import '../../../core/widgets/animated_effects.dart';
+import '../../../core/widgets/app_background.dart';
 import '../../../core/widgets/empty_state.dart';
 import '../../../core/widgets/error_state.dart';
 import '../../../core/widgets/loading_skeleton.dart';
@@ -64,34 +68,47 @@ class _TutorialsScreenState extends ConsumerState<TutorialsScreen> {
     final currentQuery = ref.watch(tutorialSearchQueryProvider);
 
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: Colors.transparent,
       appBar: AppBar(
-        title: const Text('Tutorial Perawatan'),
-        automaticallyImplyLeading: false,
+        title: const Text(
+          'Tutorial Perawatan',
+          style: TextStyle(
+            color: AppColors.deepTeal,
+            fontWeight: FontWeight.w800,
+            fontSize: 20,
+          ),
+        ),
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        leading: Navigator.of(context).canPop()
+            ? IconButton(
+                icon: const Icon(Icons.arrow_back_ios_new_rounded, color: AppColors.deepTeal),
+                onPressed: () => Navigator.of(context).pop(),
+              )
+            : null,
+        actions: <Widget>[
+          if (AppEnv.showDemoFeatures)
+            Container(
+              margin: const EdgeInsets.only(right: 16),
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+              decoration: BoxDecoration(
+                color: AppColors.softPeach,
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: const Text(
+                'Simulasi',
+                style: TextStyle(
+                  fontSize: 11,
+                  fontWeight: FontWeight.w700,
+                  color: AppColors.action,
+                ),
+              ),
+            ),
+        ],
       ),
-      bottomNavigationBar: AppBottomNav(
-        currentIndex: 3,
-        onTap: (index) {
-          switch (index) {
-            case 0:
-              context.go('/home');
-              break;
-            case 1:
-              context.go('/motors');
-              break;
-            case 2:
-              context.go('/workshops');
-              break;
-            case 3:
-              break;
-            case 4:
-              context.go('/profile');
-              break;
-          }
-        },
-      ),
-      body: SafeArea(
-        child: Column(
+      body: AppBackground(
+        child: SafeArea(
+          child: Column(
           children: <Widget>[
             // Kolom Pencarian dengan Debounce 300ms
             Padding(
@@ -140,7 +157,7 @@ class _TutorialsScreenState extends ConsumerState<TutorialsScreen> {
 
             // Chips Topik Horizontal
             SizedBox(
-              height: 44,
+              height: 38,
               child: ListView.separated(
                 padding: const EdgeInsets.symmetric(horizontal: 16),
                 scrollDirection: Axis.horizontal,
@@ -154,18 +171,25 @@ class _TutorialsScreenState extends ConsumerState<TutorialsScreen> {
                     key: Key('topic_chip_${topic.replaceAll(' ', '_')}'),
                     label: Text(topic),
                     selected: isSelected,
-                    onSelected: (_) => _selectTopic(topic),
-                    selectedColor: AppColors.primary,
-                    backgroundColor: AppColors.surface,
+                    showCheckmark: isSelected,
+                    checkmarkColor: AppColors.primary,
+                    onSelected: (_) {
+                      HapticFeedback.selectionClick();
+                      _selectTopic(topic);
+                    },
+                    selectedColor: AppColors.navIndicator,
+                    backgroundColor: AppColors.surfaceBright,
                     labelStyle: TextStyle(
-                      color: isSelected ? Colors.white : AppColors.textPrimary,
+                      color: isSelected ? AppColors.primaryText : AppColors.textPrimary,
                       fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
                       fontSize: 13,
                     ),
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 2),
                     shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(20),
+                      borderRadius: BorderRadius.circular(AppTokens.radiusFull),
                       side: BorderSide(
                         color: isSelected ? AppColors.primary : AppColors.border,
+                        width: isSelected ? 1.4 : 1.0,
                       ),
                     ),
                   );
@@ -182,13 +206,7 @@ class _TutorialsScreenState extends ConsumerState<TutorialsScreen> {
                   ref.invalidate(tutorialsListProvider);
                 },
                 child: tutorialsAsync.when(
-                  loading: () => ListView.separated(
-                    padding: const EdgeInsets.all(16),
-                    itemCount: 4,
-                    separatorBuilder: (context, index) => const SizedBox(height: 14),
-                    itemBuilder: (context, index) =>
-                        const LoadingSkeleton(height: 120, borderRadius: 16),
-                  ),
+                  loading: () => LoadingSkeleton.tutorialGrid(),
                   error: (error, _) => Center(
                     child: Padding(
                       padding: const EdgeInsets.all(24),
@@ -245,14 +263,17 @@ class _TutorialsScreenState extends ConsumerState<TutorialsScreen> {
                     }
 
                     return ListView.separated(
-                      padding: const EdgeInsets.all(16),
+                      padding: const EdgeInsets.fromLTRB(16, 16, 16, AppTokens.tabContentBottomPadding),
                       itemCount: tutorials.length,
                       separatorBuilder: (context, index) => const SizedBox(height: 14),
                       itemBuilder: (context, index) {
                         final tutorial = tutorials[index];
-                        return _TutorialCard(
-                          tutorial: tutorial,
-                          onTap: () => context.push('/tutorials/${tutorial.id}'),
+                        return AnimatedEntrance(
+                          index: index,
+                          child: _TutorialCard(
+                            tutorial: tutorial,
+                            onTap: () => context.push('/tutorials/${tutorial.id}'),
+                          ),
                         );
                       },
                     );
@@ -263,8 +284,9 @@ class _TutorialsScreenState extends ConsumerState<TutorialsScreen> {
           ],
         ),
       ),
-    );
-  }
+    ),
+  );
+}
 
   Widget _buildTopicSuggestionChip(String topic) {
     return ActionChip(
@@ -305,41 +327,27 @@ class _TutorialCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Material(
-      color: Colors.white,
-      borderRadius: BorderRadius.circular(16),
-      elevation: 0,
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(16),
-        child: Container(
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: AppColors.border, width: 1),
-          ),
-          padding: const EdgeInsets.all(16),
-          child: Row(
+    return InteractiveHoverCard(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(18),
+      backgroundColor: Colors.white,
+      borderColor: const Color(0xFFF0EAE1),
+      padding: const EdgeInsets.all(14),
+      child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: <Widget>[
-              // Thumbnail/Play Icon bergaya Warm Orange
+              // Ikon dalam squircle Soft Peach (Figma 06.01)
               Container(
-                width: 64,
-                height: 64,
+                width: 44,
+                height: 44,
                 decoration: BoxDecoration(
-                  gradient: const LinearGradient(
-                    colors: <Color>[AppColors.cream, AppColors.peach],
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                  ),
-                  borderRadius: BorderRadius.circular(14),
-                  border: Border.all(color: AppColors.peach, width: 1),
+                  color: AppColors.softPeach,
+                  borderRadius: BorderRadius.circular(12),
                 ),
-                child: const Center(
-                  child: Icon(
-                    Icons.play_circle_fill_rounded,
-                    size: 32,
-                    color: AppColors.primary,
-                  ),
+                child: const Icon(
+                  Icons.menu_book_rounded,
+                  size: 22,
+                  color: AppColors.deepTeal,
                 ),
               ),
               const SizedBox(width: 14),
@@ -355,9 +363,9 @@ class _TutorialCard extends StatelessWidget {
                           child: StatusChip(
                             label: tutorial.topic,
                             icon: Icons.play_lesson_rounded,
-                            backgroundColor: AppColors.cream,
-                            textColor: AppColors.primaryText,
-                            borderColor: AppColors.peach,
+                            backgroundColor: AppColors.softButter,
+                            textColor: AppColors.deepTeal,
+                            borderColor: const Color(0xFFF0EAE1),
                           ),
                         ),
                         const SizedBox(width: 8),
@@ -371,13 +379,13 @@ class _TutorialCard extends StatelessWidget {
                         ),
                       ],
                     ),
-                    const SizedBox(height: 8),
+                    const SizedBox(height: 6),
                     Text(
                       tutorial.title,
                       style: const TextStyle(
-                        fontSize: 14,
+                        fontSize: 14.5,
                         fontWeight: FontWeight.w700,
-                        color: AppColors.textPrimary,
+                        color: AppColors.deepTeal,
                         height: 1.3,
                       ),
                       maxLines: 2,
@@ -400,10 +408,14 @@ class _TutorialCard extends StatelessWidget {
                   ],
                 ),
               ),
+              const SizedBox(width: 6),
+              const Icon(
+                Icons.chevron_right_rounded,
+                color: AppColors.textSecondary,
+                size: 20,
+              ),
             ],
           ),
-        ),
-      ),
     );
   }
 }

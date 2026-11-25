@@ -91,11 +91,17 @@ class SupabaseAuthRepository implements AuthRepository {
         return const Result.failure(ServerException('Gagal membuat akun pengguna.'));
       }
 
-      // Update profil nomor telepon jika diperlukan
+      // Update profil nomor telepon jika diperlukan (dukung kolom phone_number & phone)
       if (phone.isNotEmpty) {
-        await _client.from('profiles').update(<String, dynamic>{
-          'phone': phone.trim(),
-        }).eq('id', user.id);
+        try {
+          await _client.from('profiles').update(<String, dynamic>{
+            'phone_number': phone.trim(),
+          }).eq('id', user.id);
+        } catch (_) {
+          await _client.from('profiles').update(<String, dynamic>{
+            'phone': phone.trim(),
+          }).eq('id', user.id);
+        }
       }
 
       return await _fetchProfile(user.id, user.email);
@@ -132,12 +138,17 @@ class SupabaseAuthRepository implements AuthRepository {
         );
       }
 
-      final updateData = <String, dynamic>{
-        'full_name': fullName.trim(),
-        if (phone != null) 'phone': phone.trim(),
-      };
-
-      await _client.from('profiles').update(updateData).eq('id', user.id);
+      try {
+        await _client.from('profiles').update(<String, dynamic>{
+          'full_name': fullName.trim(),
+          if (phone != null) 'phone_number': phone.trim(),
+        }).eq('id', user.id);
+      } catch (_) {
+        await _client.from('profiles').update(<String, dynamic>{
+          'full_name': fullName.trim(),
+          if (phone != null) 'phone': phone.trim(),
+        }).eq('id', user.id);
+      }
 
       return await _fetchProfile(user.id, user.email);
     } catch (e) {

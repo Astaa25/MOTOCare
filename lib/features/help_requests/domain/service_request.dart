@@ -37,6 +37,8 @@ class ServiceRequest {
   final double? latitude;
   final double? longitude;
   final String addressText;
+  final String cityRegency;
+  final String? landmark;
   final String contactPhone;
   final RequestStatus status;
   final DateTime createdAt;
@@ -44,6 +46,7 @@ class ServiceRequest {
   final DateTime? completedAt;
   final DateTime expiresAt;
   final bool isDemo;
+  final String? idempotencyKey;
 
   const ServiceRequest({
     required this.id,
@@ -57,6 +60,8 @@ class ServiceRequest {
     this.latitude,
     this.longitude,
     required this.addressText,
+    this.cityRegency = 'Kota Lhokseumawe',
+    this.landmark,
     required this.contactPhone,
     this.status = RequestStatus.pending,
     required this.createdAt,
@@ -64,6 +69,7 @@ class ServiceRequest {
     this.completedAt,
     required this.expiresAt,
     this.isDemo = false,
+    this.idempotencyKey,
   });
 
   /// Permintaan kedaluwarsa bila masih pending dan telah melewati batas expiresAt
@@ -81,24 +87,28 @@ class ServiceRequest {
 
   factory ServiceRequest.fromJson(Map<String, dynamic> json) {
     return ServiceRequest(
-      id: json['id'] as String,
-      userId: json['user_id'] as String,
+      id: (json['id'] ?? '') as String,
+      userId: (json['user_id'] ?? '') as String,
       mechanicId: json['mechanic_id'] as String?,
       mechanic: json['mechanic'] != null
           ? Mechanic.fromJson(json['mechanic'] as Map<String, dynamic>)
           : null,
-      motorcycleId: json['motorcycle_id'] as String?,
+      motorcycleId: (json['vehicle_id'] ?? json['motorcycle_id']) as String?,
       motorcycleName: json['motorcycle_name'] as String?,
       issueCategory: (json['issue_category'] as String?) ?? CommonIssues.lainnya,
-      issueDescription: json['issue_description'] as String,
+      issueDescription: (json['issue_description'] as String?) ?? '',
       latitude: (json['latitude'] as num?)?.toDouble(),
       longitude: (json['longitude'] as num?)?.toDouble(),
-      addressText: json['address_text'] as String,
-      contactPhone: json['contact_phone'] as String,
-      status: RequestStatus.fromString(json['status'] as String),
-      createdAt: json['created_at'] != null
-          ? DateTime.parse(json['created_at'] as String)
-          : DateTime.now(),
+      addressText: (json['manual_address'] ?? json['address_text'] ?? '') as String,
+      cityRegency: (json['city_regency'] as String?) ?? 'Kota Lhokseumawe',
+      landmark: json['landmark'] as String?,
+      contactPhone: (json['contact_phone'] ?? '') as String,
+      status: RequestStatus.fromString((json['status'] as String?) ?? 'pending'),
+      createdAt: json['requested_at'] != null
+          ? DateTime.parse(json['requested_at'] as String)
+          : (json['created_at'] != null
+              ? DateTime.parse(json['created_at'] as String)
+              : DateTime.now()),
       acceptedAt: json['accepted_at'] != null
           ? DateTime.parse(json['accepted_at'] as String)
           : null,
@@ -108,7 +118,8 @@ class ServiceRequest {
       expiresAt: json['expires_at'] != null
           ? DateTime.parse(json['expires_at'] as String)
           : DateTime.now().add(const Duration(minutes: 15)),
-      isDemo: (json['is_demo'] as bool?) ?? false,
+      isDemo: (json['is_simulation'] ?? json['is_demo'] ?? false) as bool,
+      idempotencyKey: json['idempotency_key'] as String?,
     );
   }
 
@@ -125,6 +136,8 @@ class ServiceRequest {
       'latitude': latitude,
       'longitude': longitude,
       'address_text': addressText,
+      'city_regency': cityRegency,
+      if (landmark != null) 'landmark': landmark,
       'contact_phone': contactPhone,
       'status': status.dbValue,
       'created_at': createdAt.toIso8601String(),
@@ -132,6 +145,7 @@ class ServiceRequest {
       'completed_at': completedAt?.toIso8601String(),
       'expires_at': expiresAt.toIso8601String(),
       'is_demo': isDemo,
+      if (idempotencyKey != null) 'idempotency_key': idempotencyKey,
     };
   }
 
@@ -147,6 +161,8 @@ class ServiceRequest {
     double? latitude,
     double? longitude,
     String? addressText,
+    String? cityRegency,
+    String? landmark,
     String? contactPhone,
     RequestStatus? status,
     DateTime? createdAt,
@@ -154,6 +170,7 @@ class ServiceRequest {
     DateTime? completedAt,
     DateTime? expiresAt,
     bool? isDemo,
+    String? idempotencyKey,
   }) {
     return ServiceRequest(
       id: id ?? this.id,
@@ -167,6 +184,8 @@ class ServiceRequest {
       latitude: latitude ?? this.latitude,
       longitude: longitude ?? this.longitude,
       addressText: addressText ?? this.addressText,
+      cityRegency: cityRegency ?? this.cityRegency,
+      landmark: landmark ?? this.landmark,
       contactPhone: contactPhone ?? this.contactPhone,
       status: status ?? this.status,
       createdAt: createdAt ?? this.createdAt,
@@ -174,6 +193,7 @@ class ServiceRequest {
       completedAt: completedAt ?? this.completedAt,
       expiresAt: expiresAt ?? this.expiresAt,
       isDemo: isDemo ?? this.isDemo,
+      idempotencyKey: idempotencyKey ?? this.idempotencyKey,
     );
   }
 }

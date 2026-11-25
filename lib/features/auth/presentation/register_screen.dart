@@ -3,6 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/utils/validators.dart';
+import '../../../core/widgets/animated_effects.dart';
+import '../../../core/widgets/app_background.dart';
 import '../../../core/widgets/app_dialogs.dart';
 import '../../../core/widgets/app_text_field.dart';
 import '../../../core/widgets/primary_button.dart';
@@ -65,7 +67,8 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
       appBar: AppBar(
         title: const Text('Daftar Akun'),
       ),
-      body: SafeArea(
+      body: AppBackground(
+        child: SafeArea(
         child: Center(
           child: SingleChildScrollView(
             padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 16.0),
@@ -74,19 +77,27 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: <Widget>[
-                  Text(
-                    'Mulai Rawat Motor Anda',
-                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                          fontSize: 22,
-                          fontWeight: FontWeight.w800,
+                  AnimatedEntrance(
+                    index: 0,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: <Widget>[
+                        Text(
+                          'Mulai Rawat Motor Anda',
+                          style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                                fontSize: 22,
+                                fontWeight: FontWeight.w800,
+                              ),
                         ),
-                  ),
-                  const SizedBox(height: 6),
-                  Text(
-                    'Daftar untuk menikmati kemudahan pengingat servis otomatis dan bantuan montir.',
-                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                          color: AppColors.textSecondary,
+                        const SizedBox(height: 6),
+                        Text(
+                          'Daftar untuk menikmati kemudahan pengingat servis otomatis dan bantuan montir.',
+                          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                                color: AppColors.textSecondary,
+                              ),
                         ),
+                      ],
+                    ),
                   ),
                   const SizedBox(height: 24),
 
@@ -111,73 +122,82 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                     const SizedBox(height: 16),
                   ],
 
-                  // Nama Lengkap
-                  AppTextField(
-                    key: const Key('register_name_field'),
-                    controller: _nameController,
-                    label: 'Nama Lengkap',
-                    hint: 'Contoh: Abrar Astafaraiz',
-                    prefixIcon: Icons.person_outline_rounded,
-                    validator: AppValidators.validateFullName,
-                  ),
-                  const SizedBox(height: 16),
+                  // Form Fields
+                  AnimatedEntrance(
+                    index: 1,
+                    child: Column(
+                      children: <Widget>[
+                        AppTextField(
+                          key: const Key('register_name_field'),
+                          controller: _nameController,
+                          label: 'Nama Lengkap',
+                          hint: 'Contoh: Abrar Astafaraiz',
+                          prefixIcon: Icons.person_outline_rounded,
+                          validator: AppValidators.validateFullName,
+                        ),
+                        const SizedBox(height: 16),
 
-                  // Nomor Telepon
-                  AppTextField(
-                    key: const Key('register_phone_field'),
-                    controller: _phoneController,
-                    label: 'Nomor Telepon (WhatsApp)',
-                    hint: 'Contoh: 081234567890',
-                    keyboardType: TextInputType.phone,
-                    prefixIcon: Icons.phone_outlined,
-                    validator: AppValidators.validatePhone,
-                  ),
-                  const SizedBox(height: 16),
+                        AppTextField(
+                          key: const Key('register_phone_field'),
+                          controller: _phoneController,
+                          label: 'Nomor Telepon (WhatsApp)',
+                          hint: 'Contoh: 081234567890',
+                          keyboardType: TextInputType.phone,
+                          prefixIcon: Icons.phone_outlined,
+                          validator: AppValidators.validatePhone,
+                        ),
+                        const SizedBox(height: 16),
 
-                  // Alamat Email
-                  AppTextField(
-                    key: const Key('register_email_field'),
-                    controller: _emailController,
-                    label: 'Alamat Email',
-                    hint: 'nama@domain.com',
-                    keyboardType: TextInputType.emailAddress,
-                    prefixIcon: Icons.email_outlined,
-                    validator: AppValidators.validateEmail,
-                  ),
-                  const SizedBox(height: 16),
+                        AppTextField(
+                          key: const Key('register_email_field'),
+                          controller: _emailController,
+                          label: 'Alamat Email',
+                          hint: 'nama@domain.com',
+                          keyboardType: TextInputType.emailAddress,
+                          prefixIcon: Icons.email_outlined,
+                          validator: AppValidators.validateEmail,
+                        ),
+                        const SizedBox(height: 16),
 
-                  // Kata Sandi
-                  AppTextField(
-                    key: const Key('register_password_field'),
-                    controller: _passwordController,
-                    label: 'Kata Sandi',
-                    hint: 'Minimal 8 karakter kombinasi huruf dan angka',
-                    isPassword: true,
-                    textInputAction: TextInputAction.done,
-                    prefixIcon: Icons.lock_outline_rounded,
-                    validator: AppValidators.validatePassword,
+                        AppTextField(
+                          key: const Key('register_password_field'),
+                          controller: _passwordController,
+                          label: 'Kata Sandi',
+                          hint: 'Minimal 8 karakter kombinasi huruf dan angka',
+                          isPassword: true,
+                          textInputAction: TextInputAction.done,
+                          prefixIcon: Icons.lock_outline_rounded,
+                          validator: AppValidators.validatePassword,
+                        ),
+                      ],
+                    ),
                   ),
                   const SizedBox(height: 28),
 
                   // Tombol Daftar
-                  PrimaryButton(
-                    key: const Key('register_submit_button'),
-                    label: 'Daftar Sekarang',
-                    isLoading: authState.isLoading,
-                    onPressed: _handleRegister,
+                  AnimatedEntrance(
+                    index: 2,
+                    child: PrimaryButton(
+                      key: const Key('register_submit_button'),
+                      label: 'Daftar Sekarang',
+                      isLoading: authState.isLoading,
+                      onPressed: _handleRegister,
+                    ),
                   ),
                   const SizedBox(height: 20),
 
                   // Tautan Masuk
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
+                  Wrap(
+                    alignment: WrapAlignment.center,
+                    crossAxisAlignment: WrapCrossAlignment.center,
                     children: <Widget>[
                       const Text(
                         'Sudah memiliki akun? ',
                         style: TextStyle(color: AppColors.textSecondary, fontSize: 13),
                       ),
-                      GestureDetector(
+                      BouncingWidget(
                         onTap: () => context.pop(),
+                        hoverScale: 1.03,
                         child: const Text(
                           'Masuk',
                           style: TextStyle(
@@ -193,6 +213,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
               ),
             ),
           ),
+        ),
         ),
       ),
     );

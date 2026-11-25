@@ -113,20 +113,35 @@ class SupabaseNotificationRepository implements NotificationRepository {
         );
       }
 
-      final payload = <String, dynamic>{
-        'user_id': user.id,
-        'title': notification.title,
-        'body': notification.body,
-        'type': notification.type.dbValue,
-        'is_read': notification.isRead,
-        if (notification.relatedId != null) 'related_id': notification.relatedId,
-      };
+      Map<String, dynamic> response;
+      try {
+        response = await _client
+            .from('notifications')
+            .insert(<String, dynamic>{
+              'user_id': user.id,
+              'title': notification.title,
+              'message': notification.body,
+              'notification_type': notification.type.name.toUpperCase(),
+              'is_read': notification.isRead,
+            })
+            .select()
+            .single();
+      } catch (_) {
+        final payload = <String, dynamic>{
+          'user_id': user.id,
+          'title': notification.title,
+          'body': notification.body,
+          'type': notification.type.dbValue,
+          'is_read': notification.isRead,
+          if (notification.relatedId != null) 'related_id': notification.relatedId,
+        };
 
-      final response = await _client
-          .from('notifications')
-          .insert(payload)
-          .select()
-          .single();
+        response = await _client
+            .from('notifications')
+            .insert(payload)
+            .select()
+            .single();
+      }
 
       return Result<AppNotification>.success(
         AppNotification.fromJson(response),

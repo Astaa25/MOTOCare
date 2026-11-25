@@ -5,16 +5,22 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../../core/config/app_constants.dart';
+import '../../../core/config/env.dart';
 import '../../../core/theme/app_colors.dart';
+import '../../../core/theme/motion.dart';
+import '../../../core/widgets/animated_effects.dart';
+import '../../../core/widgets/app_background.dart';
 import '../../../core/widgets/app_dialogs.dart';
 import '../../../core/widgets/error_state.dart';
 import '../../../core/widgets/loading_skeleton.dart';
 import '../../../core/widgets/primary_button.dart';
 import '../../../core/widgets/status_chip.dart';
+import '../data/demo_mechanic_simulator.dart';
 import '../domain/help_request_rules.dart';
 import '../domain/request_status.dart';
 import '../domain/service_request.dart';
 import 'help_requests_providers.dart';
+import 'widgets/simulated_mechanic_tracking_card.dart';
 
 /// Layar Detail Permintaan Bantuan Mekanik sesuai PRD Bagian 7 (M7)
 class HelpRequestDetailScreen extends ConsumerStatefulWidget {
@@ -33,18 +39,33 @@ class HelpRequestDetailScreen extends ConsumerStatefulWidget {
 class _HelpRequestDetailScreenState
     extends ConsumerState<HelpRequestDetailScreen> {
   Timer? _countdownTimer;
+  StreamSubscription<ServiceRequest?>? _requestSub;
   Duration _remainingTime = Duration.zero;
 
   @override
   void initState() {
     super.initState();
     _startCountdown();
+    _subscribeStatusUpdates();
   }
 
   @override
   void dispose() {
     _countdownTimer?.cancel();
+    _requestSub?.cancel();
     super.dispose();
+  }
+
+  void _subscribeStatusUpdates() {
+    _requestSub?.cancel();
+    _requestSub = ref
+        .read(helpRequestRepositoryProvider)
+        .watchRequest(widget.requestId)
+        .listen((updated) {
+      if (mounted && updated != null) {
+        ref.invalidate(helpRequestDetailProvider(widget.requestId));
+      }
+    });
   }
 
   void _startCountdown() {
@@ -136,7 +157,7 @@ class _HelpRequestDetailScreenState
     final requestAsync = ref.watch(helpRequestDetailProvider(widget.requestId));
 
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: Colors.transparent,
       appBar: AppBar(
         title: const Text('Detail Panggilan Montir'),
         actions: <Widget>[
@@ -148,16 +169,10 @@ class _HelpRequestDetailScreenState
           ),
         ],
       ),
-      body: SafeArea(
+      body: AppBackground(
+        child: SafeArea(
         child: requestAsync.when(
-          loading: () => ListView(
-            padding: const EdgeInsets.all(16),
-            children: const <Widget>[
-              LoadingSkeleton(height: 140, borderRadius: 16),
-              SizedBox(height: 16),
-              LoadingSkeleton(height: 180, borderRadius: 16),
-            ],
-          ),
+          loading: () => LoadingSkeleton.helpRequestDetail(),
           error: (error, _) => Center(
             child: Padding(
               padding: const EdgeInsets.all(24),
@@ -188,94 +203,114 @@ class _HelpRequestDetailScreenState
             return ListView(
               padding: const EdgeInsets.all(16),
               children: <Widget>[
-                // Header Status Card
-                Container(
-                  padding: const EdgeInsets.all(18),
-                  decoration: BoxDecoration(
-                    color: status.backgroundColor,
-                    borderRadius: BorderRadius.circular(16),
-                    border: Border.all(color: status.borderColor, width: 1.5),
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: <Widget>[
-                      Row(
-                        children: <Widget>[
-                          Container(
-                            padding: const EdgeInsets.all(8),
-                            decoration: BoxDecoration(
-                              color: Colors.white,
-                              shape: BoxShape.circle,
-                              border: Border.all(color: status.borderColor),
-                            ),
-                            child: Icon(status.icon, color: status.textColor, size: 24),
-                          ),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: <Widget>[
-                                Text(
-                                  status.label,
-                                  style: TextStyle(
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.w800,
-                                    color: status.textColor,
-                                  ),
-                                ),
-                                const SizedBox(height: 2),
-                                Text(
-                                  'ID: #${request.id.length > 8 ? request.id.substring(0, 8) : request.id}',
-                                  style: const TextStyle(
-                                    fontSize: 12,
-                                    color: AppColors.textSecondary,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                          if (request.isDemo)
-                            const StatusChip(
-                              key: Key('help_request_demo_badge'),
-                              label: 'Demo/Simulasi',
-                              icon: Icons.science_outlined,
-                              backgroundColor: Colors.white,
-                              textColor: AppColors.textSecondary,
-                              borderColor: Color(0xFFE5E7EB),
-                            ),
-                        ],
+                // Header Status Card dengan Transisi Halus (T-04 B)
+                AnimatedSwitcher(
+                  duration: AppMotion.standardDuration,
+                  transitionBuilder: (child, animation) {
+                    return FadeTransition(
+                      opacity: animation,
+                      child: SlideTransition(
+                        position: Tween<Offset>(
+                          begin: const Offset(0.0, 0.04),
+                          end: Offset.zero,
+                        ).animate(CurvedAnimation(
+                          parent: animation,
+                          curve: AppMotion.enterCurve,
+                        )),
+                        child: child,
                       ),
-
-                      // Hitung Mundur Waktu Tunggu 15 Menit saat Status Pending
-                      if (status == RequestStatus.pending) ...<Widget>[
-                        const Divider(height: 24),
+                    );
+                  },
+                  child: Container(
+                    key: ValueKey<String>('status_card_${status.name}'),
+                    padding: const EdgeInsets.all(18),
+                    decoration: BoxDecoration(
+                      color: status.backgroundColor,
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(color: status.borderColor, width: 1.5),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: <Widget>[
                         Row(
                           children: <Widget>[
-                            const Icon(
-                              Icons.timer_outlined,
-                              size: 16,
-                              color: AppColors.warning,
+                            Container(
+                              padding: const EdgeInsets.all(8),
+                              decoration: BoxDecoration(
+                                color: Colors.white,
+                                shape: BoxShape.circle,
+                                border: Border.all(color: status.borderColor),
+                              ),
+                              child: Icon(status.icon, color: status.textColor, size: 24),
                             ),
-                            const SizedBox(width: 6),
-                            const Text(
-                              'Batas konfirmasi mekanik: ',
-                              style: TextStyle(
-                                fontSize: 13,
-                                color: AppColors.textSecondary,
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: <Widget>[
+                                  Text(
+                                    status.label,
+                                    style: TextStyle(
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.w800,
+                                      color: status.textColor,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 2),
+                                  Text(
+                                    'ID: #${request.id.length > 8 ? request.id.substring(0, 8) : request.id}',
+                                    style: const TextStyle(
+                                      fontSize: 12,
+                                      color: AppColors.textSecondary,
+                                    ),
+                                  ),
+                                ],
                               ),
                             ),
-                            Text(
-                              countdownStr,
-                              style: const TextStyle(
-                                fontSize: 14,
-                                fontWeight: FontWeight.w700,
-                                color: AppColors.warning,
+                            if (AppEnv.showDemoFeatures && request.isDemo)
+                              const StatusChip(
+                                key: Key('help_request_demo_badge'),
+                                label: 'Demo/Simulasi',
+                                icon: Icons.science_outlined,
+                                backgroundColor: Colors.white,
+                                textColor: AppColors.textSecondary,
+                                borderColor: Color(0xFFE5E7EB),
                               ),
-                            ),
                           ],
                         ),
+
+                        // Hitung Mundur Waktu Tunggu 15 Menit saat Status Pending
+                        if (status == RequestStatus.pending) ...<Widget>[
+                          const Divider(height: 24),
+                          Row(
+                            children: <Widget>[
+                              Icon(
+                                Icons.timer_outlined,
+                                size: 16,
+                                color: minutes <= 1 ? AppColors.error : AppColors.warning,
+                              ),
+                              const SizedBox(width: 6),
+                              const Text(
+                                'Batas konfirmasi mekanik: ',
+                                style: TextStyle(
+                                  fontSize: 13,
+                                  color: AppColors.textSecondary,
+                                ),
+                              ),
+                              AnimatedDefaultTextStyle(
+                                duration: const Duration(milliseconds: 300),
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w700,
+                                  color: minutes <= 1 ? AppColors.error : AppColors.warning,
+                                ),
+                                child: Text(countdownStr),
+                              ),
+                            ],
+                          ),
+                        ],
                       ],
-                    ],
+                    ),
                   ),
                 ),
                 const SizedBox(height: 16),
@@ -285,7 +320,7 @@ class _HelpRequestDetailScreenState
                   Container(
                     padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(
-                      color: Colors.white,
+                      color: AppColors.surfaceBright,
                       borderRadius: BorderRadius.circular(16),
                       border: Border.all(color: AppColors.peach, width: 1.5),
                     ),
@@ -300,12 +335,14 @@ class _HelpRequestDetailScreenState
                               color: AppColors.primary,
                             ),
                             SizedBox(width: 8),
-                            Text(
-                              'Mekanik yang Ditugaskan',
-                              style: TextStyle(
-                                fontSize: 14,
-                                fontWeight: FontWeight.w700,
-                                color: AppColors.textPrimary,
+                            Expanded(
+                              child: Text(
+                                'Mekanik yang Ditugaskan',
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w700,
+                                  color: AppColors.textPrimary,
+                                ),
                               ),
                             ),
                           ],
@@ -360,11 +397,71 @@ class _HelpRequestDetailScreenState
                   const SizedBox(height: 16),
                 ],
 
+                // Kartu Status Tiba (Figma 03.10)
+                if (status == RequestStatus.inProgress) ...<Widget>[
+                  Container(
+                    key: const Key('mechanic_arrived_status_card'),
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFE0F2FE),
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(
+                        color: const Color(0xFF0284C7),
+                        width: 1.5,
+                      ),
+                    ),
+                    child: Row(
+                      children: <Widget>[
+                        const Icon(
+                          Icons.check_circle_rounded,
+                          color: Color(0xFF0284C7),
+                          size: 28,
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: <Widget>[
+                              const Text(
+                                'Montir Sudah Tiba di Lokasi',
+                                style: TextStyle(
+                                  fontSize: 15,
+                                  fontWeight: FontWeight.w800,
+                                  color: Color(0xFF0369A1),
+                                ),
+                              ),
+                              const SizedBox(height: 2),
+                              Text(
+                                '${request.mechanic?.name ?? 'Montir'} telah sampai di titik penjemputan dan sedang memeriksa kondisi sepeda motor Anda.',
+                                style: const TextStyle(
+                                  fontSize: 12,
+                                  color: AppColors.textPrimary,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                ],
+
+                // Kartu Pelacakan Montir Real-Time (Langsung bergerak ala Gojek/Grab)
+                if (status == RequestStatus.accepted ||
+                    status == RequestStatus.onTheWay ||
+                    status == RequestStatus.inProgress) ...<Widget>[
+                  SimulatedMechanicTrackingCard(
+                    request: request,
+                  ),
+                  const SizedBox(height: 16),
+                ],
+
                 // Rincian Masalah & Lokasi
                 Container(
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
-                    color: Colors.white,
+                    color: AppColors.surfaceBright,
                     borderRadius: BorderRadius.circular(16),
                     border: Border.all(color: AppColors.border),
                   ),
@@ -557,7 +654,20 @@ class _HelpRequestDetailScreenState
                             'Cari & Hubungi Bengkel Terdekat',
                             style: TextStyle(fontWeight: FontWeight.w700),
                           ),
-                          onPressed: () => context.push('/workshops'),
+                          onPressed: () {
+                            final city = request.cityRegency;
+                            final lat = request.latitude;
+                            final lng = request.longitude;
+                            final uri = Uri(
+                              path: '/workshops',
+                              queryParameters: <String, String>{
+                                if (city.isNotEmpty) 'city': city,
+                                if (lat != null) 'lat': lat.toString(),
+                                if (lng != null) 'lng': lng.toString(),
+                              },
+                            );
+                            context.push(uri.toString());
+                          },
                         ),
 
                         // Opsi 3: Kontak Darurat (hanya bila emergencyContacts terisi)
@@ -582,6 +692,173 @@ class _HelpRequestDetailScreenState
                     ),
                   ),
                   const SizedBox(height: 20),
+                ],
+
+                // Penilaian & Ulasan Layanan saat Servis Selesai (Sesuai UC-03 & Sequence Diagram)
+                if (status == RequestStatus.completed) ...<Widget>[
+                  Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFE8F5E9),
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(color: AppColors.success),
+                    ),
+                    child: Column(
+                      children: <Widget>[
+                        const Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: <Widget>[
+                            Icon(Icons.verified_rounded, color: AppColors.success, size: 28),
+                            SizedBox(width: 8),
+                            Text(
+                              'Servis Selesai Ditangani',
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.w700,
+                                color: AppColors.success,
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 8),
+                        const Text(
+                          'Mekanik telah selesai memperbaiki kendala motor Anda. Berikan penilaian Anda untuk membantu komunitas pengendara!',
+                          textAlign: TextAlign.center,
+                          style: TextStyle(fontSize: 13, color: AppColors.textPrimary),
+                        ),
+                        const SizedBox(height: 14),
+                        PrimaryButton(
+                          key: const Key('give_rating_button'),
+                          label: 'Beri Penilaian & Ulasan ⭐',
+                          icon: Icons.star_rounded,
+                          onPressed: () {
+                            ReviewRatingBottomSheet.show(
+                              context,
+                              mechanicName: request.mechanic?.name ?? 'Bang Rudi Pratama',
+                              workshopName: request.mechanic?.workshopName ?? 'Bengkel Resmi Samudera Motor',
+                              onSubmit: (rating, comment) async {
+                                await Future<void>.delayed(const Duration(milliseconds: 500));
+                              },
+                            );
+                          },
+                        ),
+                        const SizedBox(height: 10),
+                        OutlinedButton.icon(
+                          key: const Key('back_to_activity_button'),
+                          style: OutlinedButton.styleFrom(
+                            foregroundColor: AppColors.primaryText,
+                            side: const BorderSide(color: AppColors.peach),
+                            backgroundColor: Colors.white,
+                            padding: const EdgeInsets.symmetric(vertical: 12),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                          ),
+                          icon: const Icon(Icons.history_rounded),
+                          label: const Text(
+                            'Kembali ke Aktivitas',
+                            style: TextStyle(fontWeight: FontWeight.w700),
+                          ),
+                          onPressed: () {
+                            if (context.canPop()) {
+                              context.pop();
+                            } else {
+                              context.go('/help');
+                            }
+                          },
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                ],
+
+                // Kontrol Interaktif Simulasi Alur Demo (Hanya tampil jika Demo Mode diaktifkan)
+                if (AppEnv.showDemoFeatures && request.isDemo && status.isActive) ...<Widget>[
+                  Container(
+                    padding: const EdgeInsets.all(14),
+                    decoration: BoxDecoration(
+                      color: AppColors.cream,
+                      borderRadius: BorderRadius.circular(14),
+                      border: Border.all(color: AppColors.peach),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: <Widget>[
+                        const Row(
+                          children: <Widget>[
+                            Icon(Icons.science_outlined, size: 18, color: AppColors.primary),
+                            SizedBox(width: 6),
+                            Text(
+                              'Kontrol Simulasi Pengujian (Demo Mode)',
+                              style: TextStyle(
+                                fontSize: 13,
+                                fontWeight: FontWeight.w700,
+                                color: AppColors.primary,
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 10),
+                        Wrap(
+                          spacing: 8,
+                          runSpacing: 8,
+                          children: <Widget>[
+                            if (status == RequestStatus.pending)
+                              ActionChip(
+                                avatar: const Icon(Icons.check, size: 16, color: AppColors.success),
+                                label: const Text('Simulasi: Terima (Mekanik Ditemukan)', style: TextStyle(fontSize: 12)),
+                                onPressed: () async {
+                                  await ref.read(helpRequestRepositoryProvider).advanceRequest(
+                                    request.id,
+                                    RequestStatus.accepted,
+                                    assignedMechanic: DemoMechanicSimulator.demoMechanic,
+                                  );
+                                  ref.invalidate(helpRequestDetailProvider(widget.requestId));
+                                },
+                              ),
+                            if (status == RequestStatus.accepted)
+                              ActionChip(
+                                avatar: const Icon(Icons.directions_bike, size: 16, color: AppColors.primary),
+                                label: const Text('Simulasi: Berangkat (OTW)', style: TextStyle(fontSize: 12)),
+                                onPressed: () async {
+                                  await ref.read(helpRequestRepositoryProvider).advanceRequest(
+                                    request.id,
+                                    RequestStatus.onTheWay,
+                                  );
+                                  ref.invalidate(helpRequestDetailProvider(widget.requestId));
+                                },
+                              ),
+                            if (status == RequestStatus.onTheWay)
+                              ActionChip(
+                                avatar: const Icon(Icons.build, size: 16, color: Color(0xFF0284C7)),
+                                label: const Text('Simulasi: Tiba & Tangani Motor', style: TextStyle(fontSize: 12)),
+                                onPressed: () async {
+                                  await ref.read(helpRequestRepositoryProvider).advanceRequest(
+                                    request.id,
+                                    RequestStatus.inProgress,
+                                  );
+                                  ref.invalidate(helpRequestDetailProvider(widget.requestId));
+                                },
+                              ),
+                            if (status == RequestStatus.inProgress)
+                              ActionChip(
+                                avatar: const Icon(Icons.verified, size: 16, color: AppColors.success),
+                                label: const Text('Simulasi: Selesaikan Servis', style: TextStyle(fontSize: 12)),
+                                onPressed: () async {
+                                  await ref.read(helpRequestRepositoryProvider).advanceRequest(
+                                    request.id,
+                                    RequestStatus.completed,
+                                  );
+                                  ref.invalidate(helpRequestDetailProvider(widget.requestId));
+                                },
+                              ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 16),
                 ],
 
                 // Tombol Batalkan Permintaan (TC-20: Hanya pada pending, accepted, on_the_way)
@@ -610,6 +887,7 @@ class _HelpRequestDetailScreenState
           },
         ),
       ),
-    );
-  }
+    ),
+  );
+}
 }

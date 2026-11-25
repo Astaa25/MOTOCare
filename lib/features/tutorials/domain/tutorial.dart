@@ -52,10 +52,10 @@ class Tutorial {
 
   factory Tutorial.fromJson(Map<String, dynamic> json) {
     return Tutorial(
-      id: json['id'] as String,
-      title: json['title'] as String,
-      topic: json['topic'] as String,
-      youtubeUrl: json['youtube_url'] as String,
+      id: (json['id'] ?? '') as String,
+      title: (json['title'] ?? '') as String,
+      topic: (json['category'] ?? json['topic'] ?? 'Umum') as String,
+      youtubeUrl: (json['youtube_url'] ?? '') as String,
       thumbnailUrl: json['thumbnail_url'] as String?,
       description: json['description'] as String?,
       isActive: (json['is_active'] as bool?) ?? true,

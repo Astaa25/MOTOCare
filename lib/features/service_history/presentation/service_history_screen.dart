@@ -4,6 +4,8 @@ import 'package:go_router/go_router.dart';
 import '../../../core/config/app_constants.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/utils/formatters.dart';
+import '../../../core/widgets/animated_effects.dart';
+import '../../../core/widgets/app_background.dart';
 import '../../../core/widgets/empty_state.dart';
 import '../../../core/widgets/error_state.dart';
 import '../../../core/widgets/loading_skeleton.dart';
@@ -77,7 +79,7 @@ class _ServiceHistoryScreenState extends ConsumerState<ServiceHistoryScreen> {
     final filterOptions = <String>['Semua', ...AppConstants.serviceTypes];
 
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: Colors.transparent,
       appBar: AppBar(
         title: const Text('Riwayat Servis & Biaya'),
       ),
@@ -89,7 +91,8 @@ class _ServiceHistoryScreenState extends ConsumerState<ServiceHistoryScreen> {
         icon: const Icon(Icons.add_rounded),
         label: const Text('Catat Servis', style: TextStyle(fontWeight: FontWeight.w700)),
       ),
-      body: SafeArea(
+      body: AppBackground(
+        child: SafeArea(
         child: RefreshIndicator(
           color: AppColors.primary,
           onRefresh: () async {
@@ -153,6 +156,7 @@ class _ServiceHistoryScreenState extends ConsumerState<ServiceHistoryScreen> {
                                 fontSize: 20,
                                 fontWeight: FontWeight.w800,
                                 color: AppColors.primaryText,
+                                fontFeatures: <FontFeature>[FontFeature.tabularFigures()],
                               ),
                             ),
                           ],
@@ -206,16 +210,7 @@ class _ServiceHistoryScreenState extends ConsumerState<ServiceHistoryScreen> {
               // Daftar Catatan Riwayat Servis
               Expanded(
                 child: filteredListAsync.when(
-                  loading: () => ListView(
-                    padding: const EdgeInsets.all(16),
-                    children: const <Widget>[
-                      LoadingSkeleton(height: 90, borderRadius: 14),
-                      SizedBox(height: 12),
-                      LoadingSkeleton(height: 90, borderRadius: 14),
-                      SizedBox(height: 12),
-                      LoadingSkeleton(height: 90, borderRadius: 14),
-                    ],
-                  ),
+                  loading: () => LoadingSkeleton.serviceHistoryList(),
                   error: (err, _) => ErrorState(
                     title: 'Gagal Memuat Riwayat',
                     message: err.toString(),
@@ -246,8 +241,10 @@ class _ServiceHistoryScreenState extends ConsumerState<ServiceHistoryScreen> {
                         final item = list[index];
                         final icon = _getServiceIcon(item.serviceType);
 
-                        return Material(
-                          color: AppColors.background,
+                        return AnimatedEntrance(
+                          index: index,
+                          child: Material(
+                          color: AppColors.surfaceBright,
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(14),
                             side: const BorderSide(color: AppColors.border),
@@ -292,6 +289,7 @@ class _ServiceHistoryScreenState extends ConsumerState<ServiceHistoryScreen> {
                                                 fontSize: 14,
                                                 fontWeight: FontWeight.w700,
                                                 color: AppColors.primaryText,
+                                                fontFeatures: <FontFeature>[FontFeature.tabularFigures()],
                                               ),
                                             ),
                                           ],
@@ -340,16 +338,18 @@ class _ServiceHistoryScreenState extends ConsumerState<ServiceHistoryScreen> {
                               ),
                             ),
                           ),
-                        );
-                      },
-                    );
-                  },
+                        ),
+                      );
+                    },
+                  );
+                },
                 ),
               ),
             ],
           ),
         ),
       ),
-    );
-  }
+    ),
+  );
+}
 }

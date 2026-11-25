@@ -46,12 +46,19 @@ class MockAuthRepository implements AuthRepository {
 
     final trimmedEmail = email.trim().toLowerCase();
 
-    // 1. Akun Pengguna Biasa
-    if ((trimmedEmail == demoEmail || trimmedEmail == 'demo@motocare.id') && password == demoPassword) {
+    // 1. Akun Pengguna Biasa / Pelanggan (demo@motocare.id, pengguna.demo@motocare.id, userXX@motocare.id)
+    if ((trimmedEmail == demoEmail ||
+            trimmedEmail == 'demo@motocare.id' ||
+            trimmedEmail.contains('user') ||
+            trimmedEmail.contains('pelanggan')) &&
+        password == demoPassword) {
+      final userName = (trimmedEmail == 'demo@motocare.id' || trimmedEmail == demoEmail)
+          ? 'Abrar Pengguna Demo'
+          : 'Pelanggan (${trimmedEmail.split('@').first})';
       _currentUser = UserProfile(
-        id: 'demo-user-id-001',
-        email: demoEmail,
-        fullName: 'Abrar Pengguna Demo',
+        id: 'demo-user-id-${trimmedEmail.hashCode.abs()}',
+        email: trimmedEmail,
+        fullName: userName,
         phone: '081234567890',
         role: 'user',
         createdAt: DateTime(2026, 1, 1),
@@ -61,12 +68,19 @@ class MockAuthRepository implements AuthRepository {
       return Result.success(_currentUser!);
     }
 
-    // 2. Akun Mekanik Mitra
-    if (trimmedEmail == mechanicEmail && password == demoPassword) {
+    // 2. Akun Mekanik Mitra (budi.mekanik@motocare.id atau mekanikXX@motocare.id / 75 kuota mekanik)
+    if ((trimmedEmail == mechanicEmail ||
+            trimmedEmail.contains('mekanik') ||
+            trimmedEmail.contains('mechanic')) &&
+        password == demoPassword) {
+      final numSuffix = trimmedEmail.replaceAll(RegExp(r'[^0-9]'), '');
+      final mechName = trimmedEmail == mechanicEmail
+          ? 'Budi Santoso (Mekanik Mitra)'
+          : (numSuffix.isNotEmpty ? 'Mekanik Mitra #$numSuffix' : 'Mekanik Mitra (${trimmedEmail.split('@').first})');
       _currentUser = UserProfile(
-        id: 'demo-mechanic-id-001',
-        email: mechanicEmail,
-        fullName: 'Budi Santoso (Mekanik Mitra)',
+        id: 'demo-mechanic-id-${trimmedEmail.hashCode.abs()}',
+        email: trimmedEmail,
+        fullName: mechName,
         phone: '081200000001',
         role: 'mechanic',
         createdAt: DateTime(2026, 1, 1),
@@ -76,11 +90,12 @@ class MockAuthRepository implements AuthRepository {
       return Result.success(_currentUser!);
     }
 
-    // 3. Akun Administrator
-    if (trimmedEmail == adminEmail && password == demoPassword) {
+    // 3. Akun Administrator (admin@motocare.id atau adminXX@motocare.id)
+    if ((trimmedEmail == adminEmail || trimmedEmail.contains('admin')) &&
+        password == demoPassword) {
       _currentUser = UserProfile(
-        id: 'demo-admin-id-001',
-        email: adminEmail,
+        id: 'demo-admin-id-${trimmedEmail.hashCode.abs()}',
+        email: trimmedEmail,
         fullName: 'Administrator MotoCare',
         phone: '081299999999',
         role: 'admin',
@@ -95,6 +110,21 @@ class MockAuthRepository implements AuthRepository {
     if (_currentUser != null &&
         _currentUser!.email.toLowerCase() == trimmedEmail &&
         password == demoPassword) {
+      _authStreamController.add(_currentUser);
+      return Result.success(_currentUser!);
+    }
+
+    // 5. Fallback akun demo jika email berakhiran @motocare.id
+    if (password == demoPassword && trimmedEmail.endsWith('@motocare.id')) {
+      _currentUser = UserProfile(
+        id: 'mock-user-${trimmedEmail.hashCode.abs()}',
+        email: trimmedEmail,
+        fullName: 'Pengguna (${trimmedEmail.split('@').first})',
+        phone: '081298765432',
+        role: 'user',
+        createdAt: DateTime(2026, 1, 1),
+        updatedAt: DateTime.now(),
+      );
       _authStreamController.add(_currentUser);
       return Result.success(_currentUser!);
     }

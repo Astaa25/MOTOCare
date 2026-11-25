@@ -3,7 +3,9 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:url_launcher/url_launcher.dart';
+import '../../../core/config/env.dart';
 import '../../../core/theme/app_colors.dart';
+import '../../../core/widgets/app_background.dart';
 import '../../../core/widgets/error_state.dart';
 import '../../../core/widgets/loading_skeleton.dart';
 import '../../../core/widgets/primary_button.dart';
@@ -31,13 +33,20 @@ class _WorkshopDetailScreenState extends ConsumerState<WorkshopDetailScreen> {
     if (workshop.latitude != null && workshop.longitude != null) {
       final double lat = workshop.latitude!;
       final double lon = workshop.longitude!;
+      final Uri navUri = Uri.parse('google.navigation:q=$lat,$lon');
       final Uri geoUri = Uri.parse('geo:$lat,$lon?q=$lat,$lon');
       final Uri webUri = Uri.parse(
         'https://www.google.com/maps/search/?api=1&query=$lat,$lon',
       );
 
       try {
-        if (await canLaunchUrl(geoUri)) {
+        if (await canLaunchUrl(navUri)) {
+          final bool launched = await launchUrl(
+            navUri,
+            mode: LaunchMode.externalApplication,
+          );
+          if (launched) return;
+        } else if (await canLaunchUrl(geoUri)) {
           final bool launched = await launchUrl(
             geoUri,
             mode: LaunchMode.externalApplication,
@@ -93,11 +102,12 @@ class _WorkshopDetailScreenState extends ConsumerState<WorkshopDetailScreen> {
     final userLocation = userLocationAsync.valueOrNull;
 
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: Colors.transparent,
       appBar: AppBar(
         title: const Text('Detail Bengkel'),
       ),
-      body: SafeArea(
+      body: AppBackground(
+        child: SafeArea(
         child: workshopAsync.when(
           loading: () => ListView(
             padding: const EdgeInsets.all(16),
@@ -144,29 +154,28 @@ class _WorkshopDetailScreenState extends ConsumerState<WorkshopDetailScreen> {
                 Container(
                   padding: const EdgeInsets.all(20),
                   decoration: BoxDecoration(
-                    color: Colors.white,
+                    color: AppColors.surfaceBright,
                     borderRadius: BorderRadius.circular(18),
                     border: Border.all(color: AppColors.border, width: 1),
                   ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: <Widget>[
-                      Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
+                      Wrap(
+                        spacing: 8,
+                        runSpacing: 6,
+                        crossAxisAlignment: WrapCrossAlignment.center,
                         children: <Widget>[
-                          Expanded(
-                            child: Text(
-                              workshop.name,
-                              style: const TextStyle(
-                                fontSize: 18,
-                                fontWeight: FontWeight.w800,
-                                color: AppColors.textPrimary,
-                                height: 1.3,
-                              ),
+                          Text(
+                            workshop.name,
+                            style: const TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.w800,
+                              color: AppColors.textPrimary,
+                              height: 1.3,
                             ),
                           ),
-                          if (workshop.isDemo) ...<Widget>[
-                            const SizedBox(width: 8),
+                          if (AppEnv.showDemoFeatures && workshop.isDemo)
                             const StatusChip(
                               key: Key('detail_demo_badge'),
                               label: 'Demo/Simulasi',
@@ -175,7 +184,6 @@ class _WorkshopDetailScreenState extends ConsumerState<WorkshopDetailScreen> {
                               textColor: AppColors.textSecondary,
                               borderColor: Color(0xFFE5E7EB),
                             ),
-                          ],
                         ],
                       ),
                       const SizedBox(height: 12),
@@ -220,28 +228,27 @@ class _WorkshopDetailScreenState extends ConsumerState<WorkshopDetailScreen> {
                         const SizedBox(height: 12),
                         Padding(
                           padding: const EdgeInsets.only(left: 26),
-                          child: Row(
-                            children: <Widget>[
-                              Container(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 10,
-                                  vertical: 4,
-                                ),
-                                decoration: BoxDecoration(
-                                  color: AppColors.cream,
-                                  borderRadius: BorderRadius.circular(8),
-                                  border: Border.all(color: AppColors.peach),
-                                ),
-                                child: Text(
-                                  'Jarak perkiraan: $distanceStr',
-                                  style: const TextStyle(
-                                    fontSize: 12,
-                                    fontWeight: FontWeight.w700,
-                                    color: AppColors.primaryText,
-                                  ),
+                          child: Align(
+                            alignment: Alignment.centerLeft,
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 10,
+                                vertical: 4,
+                              ),
+                              decoration: BoxDecoration(
+                                color: AppColors.cream,
+                                borderRadius: BorderRadius.circular(8),
+                                border: Border.all(color: AppColors.peach),
+                              ),
+                              child: Text(
+                                'Jarak perkiraan: $distanceStr',
+                                style: const TextStyle(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w700,
+                                  color: AppColors.primaryText,
                                 ),
                               ),
-                            ],
+                            ),
                           ),
                         ),
                       ],
@@ -254,7 +261,7 @@ class _WorkshopDetailScreenState extends ConsumerState<WorkshopDetailScreen> {
                 Container(
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
-                    color: Colors.white,
+                    color: AppColors.surfaceBright,
                     borderRadius: BorderRadius.circular(16),
                     border: Border.all(color: AppColors.border),
                   ),
@@ -262,29 +269,37 @@ class _WorkshopDetailScreenState extends ConsumerState<WorkshopDetailScreen> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: <Widget>[
                       // Jam Operasional
-                      Row(
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: <Widget>[
-                          const Icon(
-                            Icons.access_time_rounded,
-                            size: 18,
-                            color: AppColors.primary,
+                          const Row(
+                            children: <Widget>[
+                              Icon(
+                                Icons.access_time_rounded,
+                                size: 16,
+                                color: AppColors.primary,
+                              ),
+                              SizedBox(width: 6),
+                              Text(
+                                'Jam Operasional',
+                                style: TextStyle(
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w700,
+                                  color: AppColors.textPrimary,
+                                ),
+                              ),
+                            ],
                           ),
-                          const SizedBox(width: 8),
-                          const Text(
-                            'Jam Operasional',
-                            style: TextStyle(
-                              fontSize: 13,
-                              fontWeight: FontWeight.w700,
-                              color: AppColors.textPrimary,
-                            ),
-                          ),
-                          const Spacer(),
-                          Text(
-                            workshop.openingHours ?? 'Belum tersedia',
-                            style: const TextStyle(
-                              fontSize: 13,
-                              color: AppColors.textSecondary,
-                              fontWeight: FontWeight.w500,
+                          const SizedBox(height: 4),
+                          Padding(
+                            padding: const EdgeInsets.only(left: 22),
+                            child: Text(
+                              workshop.openingHours ?? 'Belum tersedia',
+                              style: const TextStyle(
+                                fontSize: 13,
+                                color: AppColors.textSecondary,
+                                fontWeight: FontWeight.w500,
+                              ),
                             ),
                           ),
                         ],
@@ -292,46 +307,159 @@ class _WorkshopDetailScreenState extends ConsumerState<WorkshopDetailScreen> {
                       const Divider(height: 24),
 
                       // Nomor Telepon & Aksi Panggil
-                      Row(
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: <Widget>[
-                          const Icon(
-                            Icons.phone_outlined,
-                            size: 18,
-                            color: AppColors.primary,
-                          ),
-                          const SizedBox(width: 8),
-                          const Text(
-                            'Nomor Kontak',
-                            style: TextStyle(
-                              fontSize: 13,
-                              fontWeight: FontWeight.w700,
-                              color: AppColors.textPrimary,
-                            ),
-                          ),
-                          const Spacer(),
-                          if (workshop.phone != null &&
-                              workshop.phone!.isNotEmpty) ...<Widget>[
-                            TextButton.icon(
-                              key: const Key('call_workshop_button'),
-                              style: TextButton.styleFrom(
-                                foregroundColor: AppColors.primaryText,
-                                padding: EdgeInsets.zero,
+                          const Row(
+                            children: <Widget>[
+                              Icon(
+                                Icons.phone_outlined,
+                                size: 16,
+                                color: AppColors.primary,
                               ),
-                              icon: const Icon(Icons.call_rounded, size: 16),
-                              label: Text(workshop.phone!),
-                              onPressed: () =>
-                                  _callPhone(context, workshop.phone!),
-                            ),
-                          ] else ...<Widget>[
-                            const Text(
-                              'Belum tersedia',
-                              style: TextStyle(
+                              SizedBox(width: 6),
+                              Text(
+                                'Nomor Kontak',
+                                style: TextStyle(
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w700,
+                                  color: AppColors.textPrimary,
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 2),
+                          Padding(
+                            padding: const EdgeInsets.only(left: 22),
+                            child: workshop.phone != null &&
+                                    workshop.phone!.isNotEmpty
+                                ? TextButton.icon(
+                                    key: const Key('call_workshop_button'),
+                                    style: TextButton.styleFrom(
+                                      foregroundColor: AppColors.primaryText,
+                                      padding: EdgeInsets.zero,
+                                      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                                    ),
+                                    icon: const Icon(Icons.call_rounded, size: 16),
+                                    label: Text(
+                                      workshop.phone!,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                    onPressed: () =>
+                                        _callPhone(context, workshop.phone!),
+                                  )
+                                : const Text(
+                                    'Belum tersedia',
+                                    style: TextStyle(
+                                      fontSize: 13,
+                                      color: AppColors.textSecondary,
+                                    ),
+                                  ),
+                          ),
+                        ],
+                      ),
+                      const Divider(height: 24),
+
+                      // Rating Pengguna
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: <Widget>[
+                          const Row(
+                            children: <Widget>[
+                              Icon(
+                                Icons.star_rounded,
+                                size: 16,
+                                color: Colors.amber,
+                              ),
+                              SizedBox(width: 6),
+                              Text(
+                                'Rating Pengguna',
+                                style: TextStyle(
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w700,
+                                  color: AppColors.textPrimary,
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 4),
+                          Padding(
+                            padding: const EdgeInsets.only(left: 22),
+                            child: workshop.rating != null
+                                ? Text(
+                                    '${workshop.rating!.toStringAsFixed(1)} / 5.0 (Google Maps)',
+                                    style: const TextStyle(
+                                      fontSize: 13,
+                                      fontWeight: FontWeight.w700,
+                                      color: AppColors.textPrimary,
+                                    ),
+                                  )
+                                : const Text(
+                                    'Belum tersedia',
+                                    style: TextStyle(
+                                      fontSize: 13,
+                                      color: AppColors.textSecondary,
+                                    ),
+                                  ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 16),
+
+                // Kartu Sumber Data & Atribusi Google Maps (Kepatuhan TOS Google Maps)
+                Container(
+                  key: const Key('workshop_data_source_card'),
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: AppColors.cream,
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(color: AppColors.peach),
+                  ),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: <Widget>[
+                      Icon(
+                        (AppEnv.showDemoFeatures && workshop.isDemo)
+                            ? Icons.science_outlined
+                            : Icons.info_outline_rounded,
+                        size: 20,
+                        color: AppColors.primary,
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: <Widget>[
+                            Text(
+                              (AppEnv.showDemoFeatures && workshop.isDemo)
+                                  ? 'Sumber Data: Direktori Simulasi MotoCare'
+                                  : (workshop.source.toLowerCase().contains('google')
+                                      ? 'Sumber Data: Google Maps Platform'
+                                      : 'Sumber Data: ${workshop.source}'),
+                              style: const TextStyle(
                                 fontSize: 13,
+                                fontWeight: FontWeight.w700,
+                                color: AppColors.primaryText,
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              (AppEnv.showDemoFeatures && workshop.isDemo)
+                                  ? 'Profil bengkel ini merupakan data uji sistem MotoCare.'
+                                  : (workshop.source.toLowerCase().contains('google')
+                                      ? 'Data lokasi, jam operasional, dan kontak bersumber langsung dari Google Places API. Informasi aktual dapat berubah sewaktu-waktu.'
+                                      : 'Data bengkel terverifikasi di cakupan wilayah Kota Lhokseumawe dan Kabupaten Aceh Utara.'),
+                              style: const TextStyle(
+                                fontSize: 12,
                                 color: AppColors.textSecondary,
+                                height: 1.35,
                               ),
                             ),
                           ],
-                        ],
+                        ),
                       ),
                     ],
                   ),
@@ -343,7 +471,7 @@ class _WorkshopDetailScreenState extends ConsumerState<WorkshopDetailScreen> {
                   Container(
                     padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(
-                      color: Colors.white,
+                      color: AppColors.surfaceBright,
                       borderRadius: BorderRadius.circular(16),
                       border: Border.all(color: AppColors.border),
                     ),
@@ -382,12 +510,14 @@ class _WorkshopDetailScreenState extends ConsumerState<WorkshopDetailScreen> {
                                     color: AppColors.primary,
                                   ),
                                   const SizedBox(width: 6),
-                                  Text(
-                                    service,
-                                    style: const TextStyle(
-                                      fontSize: 12,
-                                      fontWeight: FontWeight.w600,
-                                      color: AppColors.textPrimary,
+                                  Flexible(
+                                    child: Text(
+                                      service,
+                                      style: const TextStyle(
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.w600,
+                                        color: AppColors.textPrimary,
+                                      ),
                                     ),
                                   ),
                                 ],
@@ -461,6 +591,7 @@ class _WorkshopDetailScreenState extends ConsumerState<WorkshopDetailScreen> {
           },
         ),
       ),
-    );
-  }
+    ),
+  );
+}
 }

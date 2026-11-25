@@ -43,12 +43,14 @@ class UserProfile {
   }
 
   factory UserProfile.fromJson(Map<String, dynamic> json, {String? email}) {
+    final rawRole = (json['role'] as String? ?? 'owner').toLowerCase();
+    final role = (rawRole == 'owner') ? 'user' : rawRole;
     return UserProfile(
       id: json['id'] as String,
       email: email ?? (json['email'] as String? ?? ''),
       fullName: json['full_name'] as String? ?? 'Pengguna',
-      phone: json['phone'] as String?,
-      role: json['role'] as String? ?? 'user',
+      phone: (json['phone_number'] ?? json['phone']) as String?,
+      role: role,
       createdAt: json['created_at'] != null
           ? DateTime.parse(json['created_at'] as String)
           : DateTime.now(),

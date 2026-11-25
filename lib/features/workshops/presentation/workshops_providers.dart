@@ -1,8 +1,10 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:geolocator/geolocator.dart';
 import '../../../core/config/env.dart';
+import '../../../core/services/maps_places_service.dart';
+import '../../../core/services/user_location_service.dart';
+import '../data/hybrid_workshop_repository.dart';
 import '../data/mock_workshop_repository.dart';
-import '../data/supabase_workshop_repository.dart';
 import '../domain/workshop.dart';
 import '../domain/workshop_repository.dart';
 
@@ -22,7 +24,8 @@ final workshopRepositoryProvider = Provider<WorkshopRepository>((ref) {
   if (AppEnv.useMock) {
     return MockWorkshopRepository();
   }
-  return SupabaseWorkshopRepository();
+  final placesService = ref.watch(mapsPlacesServiceProvider);
+  return HybridWorkshopRepository(placesService: placesService);
 });
 
 /// Query pencarian nama atau alamat bengkel
@@ -37,6 +40,14 @@ final workshopSelectedCityProvider = StateProvider<String>((ref) {
 
 /// Provider lokasi GPS pengguna (hanya bila izin aktif, tanpa memaksakan error)
 final userLocationProvider = FutureProvider<UserLocation?>((ref) async {
+  final globalLocation = ref.watch(globalUserLocationProvider);
+  if (globalLocation.latitude != null && globalLocation.longitude != null) {
+    return UserLocation(
+      latitude: globalLocation.latitude!,
+      longitude: globalLocation.longitude!,
+    );
+  }
+
   try {
     final bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
     if (!serviceEnabled) return null;
@@ -61,10 +72,13 @@ final workshopsListProvider = FutureProvider<List<Workshop>>((ref) async {
   final repository = ref.watch(workshopRepositoryProvider);
   final city = ref.watch(workshopSelectedCityProvider);
   final query = ref.watch(workshopSearchQueryProvider);
+  final userLoc = ref.watch(globalUserLocationProvider);
 
   return repository.getWorkshops(
     cityOrRegency: city,
     query: query,
+    latitude: userLoc.latitude,
+    longitude: userLoc.longitude,
   );
 });
 

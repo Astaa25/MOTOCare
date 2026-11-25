@@ -372,6 +372,7 @@ class _AddEditReminderScreenState extends ConsumerState<AddEditReminderScreen> {
               DropdownButtonFormField<String>(
                 key: const Key('reminder_service_type_field'),
                 initialValue: _selectedServiceType,
+                isExpanded: true,
                 decoration: const InputDecoration(
                   labelText: 'Kategori Jenis Servis',
                   prefixIcon: Icon(Icons.build_outlined),
@@ -379,7 +380,10 @@ class _AddEditReminderScreenState extends ConsumerState<AddEditReminderScreen> {
                 items: AppConstants.serviceTypes.map((type) {
                   return DropdownMenuItem<String>(
                     value: type,
-                    child: Text(type),
+                    child: Text(
+                      type,
+                      overflow: TextOverflow.ellipsis,
+                    ),
                   );
                 }).toList(),
                 onChanged: (val) {

@@ -3,6 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/utils/formatters.dart';
+import '../../../core/widgets/animated_effects.dart';
+import '../../../core/widgets/app_background.dart';
 import '../../../core/widgets/empty_state.dart';
 import '../../../core/widgets/error_state.dart';
 import '../../../core/widgets/loading_skeleton.dart';
@@ -31,7 +33,7 @@ class RemindersScreen extends ConsumerWidget {
     final String motorTitle = motor != null ? '${motor.brand} ${motor.model}' : 'Sepeda Motor';
 
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: Colors.transparent,
       appBar: AppBar(
         title: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -66,7 +68,8 @@ class RemindersScreen extends ConsumerWidget {
         ),
         onPressed: () => context.push('/reminders/new?motorId=$motorcycleId'),
       ),
-      body: SafeArea(
+      body: AppBackground(
+        child: SafeArea(
         child: RefreshIndicator(
           color: AppColors.primary,
           onRefresh: () async {
@@ -74,12 +77,7 @@ class RemindersScreen extends ConsumerWidget {
             ref.invalidate(motorcycleDetailProvider(motorcycleId));
           },
           child: sortedRemindersAsync.when(
-            loading: () => ListView.separated(
-              padding: const EdgeInsets.all(16),
-              itemCount: 4,
-              separatorBuilder: (context, index) => const SizedBox(height: 12),
-              itemBuilder: (context, index) => const LoadingSkeleton(height: 110, borderRadius: 16),
-            ),
+            loading: () => LoadingSkeleton.reminderList(),
             error: (err, _) => Center(
               child: Padding(
                 padding: const EdgeInsets.all(24),
@@ -130,20 +128,23 @@ class RemindersScreen extends ConsumerWidget {
                   final reminder = reminders[index - 1];
                   final status = reminder.computeStatus(currentKm);
 
-                  return _ReminderCard(
-                    key: Key('reminder_card_${reminder.id}'),
-                    reminder: reminder,
-                    status: status,
-                    currentKm: currentKm,
-                    onTap: () => context.push('/reminders/${reminder.id}'),
-                    onRecordService: () {
-                      context.push(
-                        '/motors/$motorcycleId/services/new'
-                        '?prefilledType=${Uri.encodeComponent(reminder.serviceType ?? reminder.title)}'
-                        '&prefilledMileage=${reminder.targetMileage ?? currentKm}'
-                        '&reminderId=${reminder.id}',
-                      );
-                    },
+                  return AnimatedEntrance(
+                    index: index,
+                    child: _ReminderCard(
+                      key: Key('reminder_card_${reminder.id}'),
+                      reminder: reminder,
+                      status: status,
+                      currentKm: currentKm,
+                      onTap: () => context.push('/reminders/${reminder.id}'),
+                      onRecordService: () {
+                        context.push(
+                          '/motors/$motorcycleId/services/new'
+                          '?prefilledType=${Uri.encodeComponent(reminder.serviceType ?? reminder.title)}'
+                          '&prefilledMileage=${reminder.targetMileage ?? currentKm}'
+                          '&reminderId=${reminder.id}',
+                        );
+                      },
+                    ),
                   );
                 },
               );
@@ -151,8 +152,9 @@ class RemindersScreen extends ConsumerWidget {
           ),
         ),
       ),
-    );
-  }
+    ),
+  );
+}
 }
 
 class _SummaryBanner extends StatelessWidget {
@@ -262,7 +264,7 @@ class _ReminderCard extends StatelessWidget {
     }
 
     return Material(
-      color: Colors.white,
+      color: AppColors.surfaceBright,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(16),
         side: BorderSide(

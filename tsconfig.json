@@ -1,0 +1,7 @@
+{
+  "compilerOptions": {
+    "types": ["@figma/code-connect/figma-types"],
+    "moduleResolution": "node",
+    "target": "ES2022"
+  }
+}

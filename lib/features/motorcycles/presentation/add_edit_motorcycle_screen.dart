@@ -1,10 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/utils/validators.dart';
+import '../../../core/widgets/app_background.dart';
 import '../../../core/widgets/app_dialogs.dart';
 import '../../../core/widgets/app_text_field.dart';
 import '../../../core/widgets/primary_button.dart';
+import '../../auth/presentation/auth_state_provider.dart';
 import '../domain/motorcycle.dart';
 import 'motorcycle_providers.dart';
 
@@ -171,14 +174,66 @@ class _AddEditMotorcycleScreenState
 
   @override
   Widget build(BuildContext context) {
+    final user = ref.watch(currentUserProvider);
+    if (user != null && (user.isMechanic || user.isAdmin)) {
+      final isMech = user.isMechanic;
+      return Scaffold(
+        backgroundColor: AppColors.background,
+        appBar: AppBar(title: const Text('Akses Dibatasi')),
+        body: Center(
+          child: Padding(
+            padding: const EdgeInsets.all(24.0),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: <Widget>[
+                Container(
+                  width: 72,
+                  height: 72,
+                  decoration: const BoxDecoration(
+                    color: Color(0xFFFEE2E2),
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(
+                    Icons.block_rounded,
+                    size: 38,
+                    color: AppColors.error,
+                  ),
+                ),
+                const SizedBox(height: 20),
+                Text(
+                  isMech ? 'Mekanik Tidak Menambah Kendaraan' : 'Akses Dibatasi Administrator',
+                  style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w800),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 10),
+                Text(
+                  isMech
+                      ? 'Sebagai Mekanik Mitra, Anda bertugas merawat dan melayani servis motor pelanggan dari pesanan darurat, bukan menambahkan kendaraan di aplikasi.'
+                      : 'Halaman ini hanya untuk pengguna / pelanggan motor.',
+                  style: const TextStyle(fontSize: 13, color: AppColors.textSecondary, height: 1.5),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 24),
+                PrimaryButton(
+                  label: isMech ? 'Kembali ke Tugas Montir' : 'Kembali ke Beranda',
+                  onPressed: () => context.go('/home'),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+    }
+
     final title = widget.isEditing ? 'Ubah Sepeda Motor' : 'Tambah Motor Baru';
 
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: Colors.transparent,
       appBar: AppBar(
         title: Text(title),
       ),
-      body: SafeArea(
+      body: AppBackground(
+        child: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(20),
           child: Form(
@@ -360,6 +415,7 @@ class _AddEditMotorcycleScreenState
           ),
         ),
       ),
-    );
-  }
+    ),
+  );
+}
 }

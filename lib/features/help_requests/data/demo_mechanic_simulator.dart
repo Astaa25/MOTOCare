@@ -1,25 +1,32 @@
 import 'dart:async';
+import '../../../core/config/env.dart';
 import '../../notifications/domain/app_notification.dart';
 import '../../notifications/domain/notification_repository.dart';
 import '../domain/help_request_repository.dart';
 import '../domain/mechanic.dart';
 import '../domain/request_status.dart';
 
-/// Simulator Montir Demo sesuai PRD Bagian 6.6 & 7 (M7)
-/// Mensimulasikan konfirmasi montir, penugasan, dan perubahan status real-time dalam mode mock
+/// Dispatcher Montir Mitra MotoCare
+/// Menjadwalkan konfirmasi montir, penugasan, dan pembaruan status perjalanan secara otomatis
 class DemoMechanicSimulator {
-  static final Mechanic demoMechanic = Mechanic(
-    id: 'mech-demo-01',
-    profileId: 'prof-mech-01',
-    name: '[Demo] Bang Rudi Pratama',
-    phone: '081269009988',
-    workshopId: 'ws-01',
-    workshopName: '[Demo] Bengkel Resmi Samudera Motor Lhokseumawe',
-    isAvailable: true,
-    serviceArea: 'Kota Lhokseumawe & Sekitarnya',
-    isDemo: true,
-    createdAt: DateTime(2026, 10, 1),
-  );
+  static Mechanic get demoMechanic => Mechanic(
+        id: 'mech-01',
+        profileId: 'prof-mech-01',
+        name: AppEnv.showDemoFeatures
+            ? '[Demo] Bang Rudi Pratama'
+            : 'Bang Rudi Pratama',
+        phone: '081269009988',
+        workshopId: 'ws-01',
+        workshopName: AppEnv.showDemoFeatures
+            ? '[Demo] Bengkel Resmi Samudera Motor Lhokseumawe'
+            : 'Bengkel Resmi Samudera Motor Lhokseumawe',
+        isAvailable: true,
+        serviceArea: 'Kota Lhokseumawe & Sekitarnya',
+        latitude: 5.1895,
+        longitude: 97.1485,
+        isDemo: AppEnv.showDemoFeatures,
+        createdAt: DateTime(2026, 10, 1),
+      );
 
   final List<Timer> _activeTimers = <Timer>[];
 

@@ -1,20 +1,34 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:url_launcher/url_launcher.dart';
+import '../../../core/config/env.dart';
+import '../../../core/services/user_location_service.dart';
 import '../../../core/theme/app_colors.dart';
-import '../../../core/widgets/app_bottom_nav.dart';
+import '../../../core/theme/app_tokens.dart';
+import '../../../core/widgets/animated_effects.dart';
+import '../../../core/widgets/app_background.dart';
 import '../../../core/widgets/empty_state.dart';
-import '../../../core/widgets/error_state.dart';
 import '../../../core/widgets/loading_skeleton.dart';
+import '../../../core/widgets/primary_button.dart';
 import '../../../core/widgets/status_chip.dart';
+import '../../help_requests/presentation/location_picker_screen.dart';
 import '../domain/workshop.dart';
 import '../domain/workshop_rules.dart';
 import 'workshops_providers.dart';
 
-/// Layar Katalog Bengkel Terverifikasi sesuai PRD Bagian 7 (M6)
+/// Layar Katalog Bengkel Terverifikasi sesuai PRD Bagian 7 (M6) & Figma 05.01
 class WorkshopsScreen extends ConsumerStatefulWidget {
-  const WorkshopsScreen({super.key});
+  final String? initialCity;
+  final String? initialQuery;
+
+  const WorkshopsScreen({
+    super.key,
+    this.initialCity,
+    this.initialQuery,
+  });
 
   @override
   ConsumerState<WorkshopsScreen> createState() => _WorkshopsScreenState();
@@ -27,9 +41,19 @@ class _WorkshopsScreenState extends ConsumerState<WorkshopsScreen> {
   @override
   void initState() {
     super.initState();
-    _searchController = TextEditingController(
-      text: ref.read(workshopSearchQueryProvider),
-    );
+    final initialQ = widget.initialQuery ?? ref.read(workshopSearchQueryProvider);
+    _searchController = TextEditingController(text: initialQ);
+
+    if (widget.initialQuery != null && widget.initialQuery!.isNotEmpty) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        ref.read(workshopSearchQueryProvider.notifier).state = widget.initialQuery!;
+      });
+    }
+    if (widget.initialCity != null && widget.initialCity!.isNotEmpty) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        ref.read(workshopSelectedCityProvider.notifier).state = widget.initialCity!;
+      });
+    }
   }
 
   @override
@@ -58,6 +82,44 @@ class _WorkshopsScreenState extends ConsumerState<WorkshopsScreen> {
     ref.read(workshopSelectedCityProvider.notifier).state = city;
   }
 
+  Future<void> _openSearchLocationPicker(BuildContext context) async {
+    final draft = await context.push<LocationDraft>('/help/picker');
+    if (draft != null && mounted) {
+      if (draft.cityRegency.isNotEmpty) {
+        ref.read(workshopSelectedCityProvider.notifier).state = draft.cityRegency;
+      }
+      ref.read(globalUserLocationProvider.notifier).setManualLocation(
+        address: draft.addressText,
+        cityRegency: draft.cityRegency,
+        landmark: draft.landmark,
+        latitude: draft.latitude,
+        longitude: draft.longitude,
+      );
+      ref.invalidate(workshopsListProvider);
+    }
+  }
+
+  Future<void> _openExternalMapsSearch(
+    String query,
+    double? lat,
+    double? lon,
+  ) async {
+    final clean = query.trim().isNotEmpty ? query.trim() : 'bengkel motor';
+    final Uri uri;
+    if (lat != null && lon != null) {
+      uri = Uri.parse(
+        'https://www.google.com/maps/search/?api=1&query=$clean&center=$lat,$lon',
+      );
+    } else {
+      uri = Uri.parse(
+        'https://www.google.com/maps/search/?api=1&query=$clean+lhokseumawe',
+      );
+    }
+    try {
+      await launchUrl(uri, mode: LaunchMode.externalApplication);
+    } catch (_) {}
+  }
+
   @override
   Widget build(BuildContext context) {
     final selectedCity = ref.watch(workshopSelectedCityProvider);
@@ -65,39 +127,51 @@ class _WorkshopsScreenState extends ConsumerState<WorkshopsScreen> {
     final currentQuery = ref.watch(workshopSearchQueryProvider);
     final userLocationAsync = ref.watch(userLocationProvider);
     final userLocation = userLocationAsync.valueOrNull;
+    final globalLocation = ref.watch(globalUserLocationProvider);
 
     // Evaluasi TC-10: Pencarian di luar wilayah operasional MotoCare
     final bool isOutOfCoverage = WorkshopRules.isOutOfCoverageQuery(currentQuery);
 
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: Colors.transparent,
       appBar: AppBar(
-        title: const Text('Bengkel Terverifikasi'),
-        automaticallyImplyLeading: false,
+        title: const Text(
+          'Bengkel Terverifikasi',
+          style: TextStyle(
+            color: AppColors.deepTeal,
+            fontWeight: FontWeight.w800,
+            fontSize: 20,
+          ),
+        ),
+        leading: Navigator.of(context).canPop()
+            ? IconButton(
+                icon: const Icon(Icons.arrow_back_ios_new_rounded, color: AppColors.deepTeal),
+                onPressed: () => Navigator.of(context).pop(),
+              )
+            : null,
+        actions: <Widget>[
+          if (AppEnv.showDemoFeatures)
+            Container(
+              margin: const EdgeInsets.only(right: 16),
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+              decoration: BoxDecoration(
+                color: AppColors.softPeach,
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: const Text(
+                'Simulasi',
+                style: TextStyle(
+                  fontSize: 11,
+                  fontWeight: FontWeight.w700,
+                  color: AppColors.action,
+                ),
+              ),
+            ),
+        ],
       ),
-      bottomNavigationBar: AppBottomNav(
-        currentIndex: 2,
-        onTap: (index) {
-          switch (index) {
-            case 0:
-              context.go('/home');
-              break;
-            case 1:
-              context.go('/motors');
-              break;
-            case 2:
-              break;
-            case 3:
-              context.go('/tutorials');
-              break;
-            case 4:
-              context.go('/profile');
-              break;
-          }
-        },
-      ),
-      body: SafeArea(
-        child: Column(
+      body: AppBackground(
+        child: SafeArea(
+          child: Column(
           children: <Widget>[
             // Kalimat Cakupan Wilayah Permanen sesuai PRD 2.2 & 7 M6
             Container(
@@ -130,6 +204,75 @@ class _WorkshopsScreenState extends ConsumerState<WorkshopsScreen> {
                     ),
                   ),
                 ],
+              ),
+            ),
+
+            // Baris Lokasi Pencarian (Figma 05.01)
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+              child: Container(
+                key: const Key('workshop_search_location_bar'),
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                decoration: BoxDecoration(
+                  color: AppColors.surfaceBright,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: AppColors.border),
+                ),
+                child: Row(
+                  children: <Widget>[
+                    const Icon(
+                      Icons.my_location_rounded,
+                      size: 16,
+                      color: AppColors.primary,
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: <Widget>[
+                          const Text(
+                            'Lokasi Pencarian',
+                            style: TextStyle(
+                              fontSize: 10,
+                              color: AppColors.textSecondary,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                          Text(
+                            globalLocation.formattedAddress ??
+                                (selectedCity != 'Semua'
+                                    ? selectedCity
+                                    : 'Kota Lhokseumawe & Kab. Aceh Utara'),
+                            style: const TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w700,
+                              color: AppColors.textPrimary,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ],
+                      ),
+                    ),
+                    TextButton(
+                      key: const Key('change_workshop_search_location_button'),
+                      style: TextButton.styleFrom(
+                        foregroundColor: AppColors.primary,
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                        minimumSize: Size.zero,
+                        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                      ),
+                      onPressed: () => _openSearchLocationPicker(context),
+                      child: const Text(
+                        'Ubah',
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w800,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
 
@@ -180,7 +323,7 @@ class _WorkshopsScreenState extends ConsumerState<WorkshopsScreen> {
 
             // Filter Chips Wilayah
             SizedBox(
-              height: 44,
+              height: 38,
               child: ListView(
                 padding: const EdgeInsets.symmetric(horizontal: 16),
                 scrollDirection: Axis.horizontal,
@@ -213,26 +356,110 @@ class _WorkshopsScreenState extends ConsumerState<WorkshopsScreen> {
                         ref.invalidate(workshopsListProvider);
                       },
                       child: workshopsAsync.when(
-                        loading: () => ListView.separated(
-                          padding: const EdgeInsets.all(16),
-                          itemCount: 4,
-                          separatorBuilder: (context, index) =>
-                              const SizedBox(height: 14),
-                          itemBuilder: (context, index) => const LoadingSkeleton(
-                            height: 140,
-                            borderRadius: 16,
-                          ),
-                        ),
-                        error: (error, _) => Center(
-                          child: Padding(
-                            padding: const EdgeInsets.all(24),
-                            child: ErrorState(
-                              title: 'Gagal Memuat Bengkel',
-                              message: error.toString(),
-                              onRetry: () =>
-                                  ref.invalidate(workshopsListProvider),
+                        loading: () => LoadingSkeleton.workshopList(),
+                        error: (error, _) => ListView(
+                          padding: const EdgeInsets.all(20),
+                          children: <Widget>[
+                            const SizedBox(height: 24),
+                            Center(
+                              child: Container(
+                                key: const Key('failed_workshops_state'),
+                                padding: const EdgeInsets.all(24),
+                                decoration: BoxDecoration(
+                                  color: Colors.white,
+                                  borderRadius: BorderRadius.circular(20),
+                                  border: Border.all(color: AppColors.border),
+                                  boxShadow: <BoxShadow>[
+                                    BoxShadow(
+                                      color: Colors.black.withValues(alpha: 0.04),
+                                      blurRadius: 10,
+                                      offset: const Offset(0, 4),
+                                    ),
+                                  ],
+                                ),
+                                child: Column(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: <Widget>[
+                                    Container(
+                                      padding: const EdgeInsets.all(16),
+                                      decoration: const BoxDecoration(
+                                        color: Color(0xFFFFF3E0),
+                                        shape: BoxShape.circle,
+                                      ),
+                                      child: const Icon(
+                                        Icons.cloud_off_rounded,
+                                        size: 38,
+                                        color: Color(0xFFE65100),
+                                      ),
+                                    ),
+                                    const SizedBox(height: 16),
+                                    const Text(
+                                      'Bengkel belum dapat dimuat',
+                                      style: TextStyle(
+                                        fontSize: 17,
+                                        fontWeight: FontWeight.w800,
+                                        color: AppColors.textPrimary,
+                                      ),
+                                      textAlign: TextAlign.center,
+                                    ),
+                                    const SizedBox(height: 8),
+                                    const Text(
+                                      'Terjadi kendala saat memuat data bengkel di sekitar lokasi Anda. Periksa koneksi internet atau gunakan pencarian langsung di Google Maps.',
+                                      style: TextStyle(
+                                        fontSize: 13,
+                                        color: AppColors.textSecondary,
+                                        height: 1.4,
+                                      ),
+                                      textAlign: TextAlign.center,
+                                    ),
+                                    const SizedBox(height: 20),
+                                    PrimaryButton(
+                                      key: const Key('retry_workshops_button'),
+                                      label: 'Coba Muat Ulang',
+                                      icon: Icons.refresh_rounded,
+                                      onPressed: () =>
+                                          ref.invalidate(workshopsListProvider),
+                                    ),
+                                    const SizedBox(height: 10),
+                                    OutlinedButton.icon(
+                                      key: const Key('open_external_maps_search_button'),
+                                      style: OutlinedButton.styleFrom(
+                                        foregroundColor: AppColors.primaryText,
+                                        side: const BorderSide(
+                                          color: AppColors.peach,
+                                          width: 1.5,
+                                        ),
+                                        backgroundColor: AppColors.cream,
+                                        padding: const EdgeInsets.symmetric(
+                                          vertical: 12,
+                                          horizontal: 16,
+                                        ),
+                                        shape: RoundedRectangleBorder(
+                                          borderRadius:
+                                              BorderRadius.circular(12),
+                                        ),
+                                      ),
+                                      icon: const Icon(Icons.map_rounded, size: 18),
+                                      label: const Text(
+                                        'Buka Pencarian di Maps',
+                                        style: TextStyle(
+                                          fontWeight: FontWeight.w700,
+                                          fontSize: 13,
+                                        ),
+                                      ),
+                                      onPressed: () => _openExternalMapsSearch(
+                                        currentQuery,
+                                        userLocation?.latitude ??
+                                            globalLocation.latitude,
+                                        userLocation?.longitude ??
+                                            globalLocation.longitude,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
                             ),
-                          ),
+                          ],
                         ),
                         data: (List<Workshop> workshops) {
                           if (workshops.isEmpty) {
@@ -259,7 +486,7 @@ class _WorkshopsScreenState extends ConsumerState<WorkshopsScreen> {
                           }
 
                           return ListView.separated(
-                            padding: const EdgeInsets.all(16),
+                            padding: const EdgeInsets.fromLTRB(16, 16, 16, AppTokens.tabContentBottomPadding),
                             itemCount: workshops.length,
                             separatorBuilder: (context, index) =>
                                 const SizedBox(height: 14),
@@ -272,11 +499,14 @@ class _WorkshopsScreenState extends ConsumerState<WorkshopsScreen> {
                                 userLon: userLocation?.longitude,
                               );
 
-                              return _WorkshopCard(
-                                workshop: workshop,
-                                distance: distanceStr,
-                                onTap: () =>
-                                    context.push('/workshops/${workshop.id}'),
+                              return AnimatedEntrance(
+                                index: index,
+                                child: _WorkshopCard(
+                                  workshop: workshop,
+                                  distance: distanceStr,
+                                  onTap: () =>
+                                      context.push('/workshops/${workshop.id}'),
+                                ),
                               );
                             },
                           );
@@ -287,8 +517,9 @@ class _WorkshopsScreenState extends ConsumerState<WorkshopsScreen> {
           ],
         ),
       ),
-    );
-  }
+    ),
+  );
+}
 
   Widget _buildCityChip(String cityKey, String label, String currentSelected) {
     final bool isSelected = currentSelected.toLowerCase() == cityKey.toLowerCase();
@@ -297,18 +528,25 @@ class _WorkshopsScreenState extends ConsumerState<WorkshopsScreen> {
       key: Key('city_chip_${cityKey.replaceAll(' ', '_')}'),
       label: Text(label),
       selected: isSelected,
-      onSelected: (_) => _selectCity(cityKey),
-      selectedColor: AppColors.primary,
-      backgroundColor: AppColors.surface,
+      showCheckmark: isSelected,
+      checkmarkColor: AppColors.primary,
+      onSelected: (_) {
+        HapticFeedback.selectionClick();
+        _selectCity(cityKey);
+      },
+      selectedColor: AppColors.navIndicator,
+      backgroundColor: AppColors.surfaceBright,
       labelStyle: TextStyle(
-        color: isSelected ? Colors.white : AppColors.textPrimary,
+        color: isSelected ? AppColors.primaryText : AppColors.textPrimary,
         fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
         fontSize: 13,
       ),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 2),
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(AppTokens.radiusFull),
         side: BorderSide(
           color: isSelected ? AppColors.primary : AppColors.border,
+          width: isSelected ? 1.4 : 1.0,
         ),
       ),
     );
@@ -348,163 +586,148 @@ class _WorkshopCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Material(
-      color: Colors.white,
-      borderRadius: BorderRadius.circular(16),
-      elevation: 0,
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(16),
-        child: Container(
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: AppColors.border, width: 1),
-          ),
-          padding: const EdgeInsets.all(16),
-          child: Column(
+    return InteractiveHoverCard(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(18),
+      backgroundColor: Colors.white,
+      borderColor: const Color(0xFFF0EAE1),
+      padding: const EdgeInsets.all(14),
+      child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: <Widget>[
-              // Baris Header: Nama Bengkel & Lencana Demo/Simulasi
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: <Widget>[
-                  Expanded(
-                    child: Text(
-                      workshop.name,
-                      style: const TextStyle(
-                        fontSize: 15,
-                        fontWeight: FontWeight.w700,
-                        color: AppColors.textPrimary,
-                        height: 1.3,
-                      ),
-                    ),
-                  ),
-                  if (workshop.isDemo) ...<Widget>[
-                    const SizedBox(width: 8),
-                    const StatusChip(
-                      key: Key('demo_workshop_badge'),
-                      label: 'Demo/Simulasi',
-                      icon: Icons.science_outlined,
-                      backgroundColor: Color(0xFFF3F4F6),
-                      textColor: AppColors.textSecondary,
-                      borderColor: Color(0xFFE5E7EB),
-                    ),
-                  ],
-                ],
+              // Ikon Bengkel Soft Peach (Figma 05)
+              Container(
+                width: 44,
+                height: 44,
+                decoration: BoxDecoration(
+                  color: AppColors.softPeach,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: const Icon(
+                  Icons.storefront_rounded,
+                  color: AppColors.deepTeal,
+                  size: 22,
+                ),
               ),
-              const SizedBox(height: 6),
+              const SizedBox(width: 14),
 
-              // Alamat & Kota
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: <Widget>[
-                  const Icon(
-                    Icons.location_on_outlined,
-                    size: 16,
-                    color: AppColors.textSecondary,
-                  ),
-                  const SizedBox(width: 4),
-                  Expanded(
-                    child: Text(
+              // Detail Bengkel
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: <Widget>[
+                    Wrap(
+                      spacing: 6,
+                      runSpacing: 4,
+                      crossAxisAlignment: WrapCrossAlignment.center,
+                      children: <Widget>[
+                        Text(
+                          workshop.name,
+                          style: const TextStyle(
+                            fontSize: 14.5,
+                            fontWeight: FontWeight.w700,
+                            color: AppColors.deepTeal,
+                            height: 1.3,
+                          ),
+                        ),
+                        if (AppEnv.showDemoFeatures && workshop.isDemo)
+                          const StatusChip(
+                            key: Key('demo_workshop_badge'),
+                            label: 'Demo/Simulasi',
+                            icon: Icons.science_outlined,
+                            backgroundColor: Color(0xFFF3F4F6),
+                            textColor: AppColors.textSecondary,
+                            borderColor: Color(0xFFE5E7EB),
+                          ),
+                      ],
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
                       workshop.address,
                       style: const TextStyle(
                         fontSize: 12,
                         color: AppColors.textSecondary,
                         height: 1.3,
                       ),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
                     ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 10),
-
-              // Baris Info Jarak (jika ada) dan Jam Operasional
-              Row(
-                children: <Widget>[
-                  if (distance != null) ...<Widget>[
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 8,
-                        vertical: 3,
-                      ),
-                      decoration: BoxDecoration(
-                        color: AppColors.cream,
-                        borderRadius: BorderRadius.circular(8),
-                        border: Border.all(color: AppColors.peach),
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: <Widget>[
-                          const Icon(
-                            Icons.directions_bike_rounded,
-                            size: 13,
-                            color: AppColors.primary,
-                          ),
-                          const SizedBox(width: 4),
-                          Text(
-                            distance!,
-                            style: const TextStyle(
-                              fontSize: 11,
-                              fontWeight: FontWeight.w700,
-                              color: AppColors.primaryText,
+                    const SizedBox(height: 8),
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 4,
+                      crossAxisAlignment: WrapCrossAlignment.center,
+                      children: <Widget>[
+                        if (distance != null) ...<Widget>[
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 8,
+                              vertical: 3,
+                            ),
+                            decoration: BoxDecoration(
+                              color: AppColors.softButter,
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: <Widget>[
+                                const Icon(
+                                  Icons.directions_bike_rounded,
+                                  size: 13,
+                                  color: AppColors.deepTeal,
+                                ),
+                                const SizedBox(width: 4),
+                                Text(
+                                  distance!,
+                                  style: const TextStyle(
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.w700,
+                                    color: AppColors.deepTeal,
+                                  ),
+                                ),
+                              ],
                             ),
                           ),
                         ],
-                      ),
+                        if (workshop.openingHours != null) ...<Widget>[
+                          ConstrainedBox(
+                            constraints: const BoxConstraints(maxWidth: 200),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: <Widget>[
+                                const Icon(
+                                  Icons.access_time_rounded,
+                                  size: 13,
+                                  color: AppColors.textSecondary,
+                                ),
+                                const SizedBox(width: 4),
+                                Flexible(
+                                  child: Text(
+                                    workshop.openingHours!,
+                                    style: const TextStyle(
+                                      fontSize: 11,
+                                      color: AppColors.textSecondary,
+                                    ),
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ],
                     ),
-                    const SizedBox(width: 10),
                   ],
-                  if (workshop.openingHours != null) ...<Widget>[
-                    const Icon(
-                      Icons.access_time_rounded,
-                      size: 14,
-                      color: AppColors.textSecondary,
-                    ),
-                    const SizedBox(width: 4),
-                    Text(
-                      workshop.openingHours!,
-                      style: const TextStyle(
-                        fontSize: 12,
-                        color: AppColors.textSecondary,
-                      ),
-                    ),
-                  ],
-                ],
-              ),
-
-              // Layanan Unggulan
-              if (workshop.services.isNotEmpty) ...<Widget>[
-                const SizedBox(height: 10),
-                Wrap(
-                  spacing: 6,
-                  runSpacing: 6,
-                  children: workshop.services.take(3).map((service) {
-                    return Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 8,
-                        vertical: 2,
-                      ),
-                      decoration: BoxDecoration(
-                        color: AppColors.surface,
-                        borderRadius: BorderRadius.circular(6),
-                        border: Border.all(color: AppColors.border),
-                      ),
-                      child: Text(
-                        service,
-                        style: const TextStyle(
-                          fontSize: 11,
-                          color: AppColors.textSecondary,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                    );
-                  }).toList(),
                 ),
-              ],
+              ),
+              const SizedBox(width: 6),
+              const Icon(
+                Icons.chevron_right_rounded,
+                color: AppColors.textSecondary,
+                size: 20,
+              ),
             ],
           ),
-        ),
-      ),
     );
   }
 }

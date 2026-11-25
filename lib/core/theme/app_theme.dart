@@ -73,6 +73,16 @@ abstract class AppTheme {
       fontFamily: fontFamilyName,
       textTheme: baseTextTheme,
       scaffoldBackgroundColor: AppColors.background,
+      splashFactory: InkSparkle.splashFactory,
+      pageTransitionsTheme: const PageTransitionsTheme(
+        builders: <TargetPlatform, PageTransitionsBuilder>{
+          TargetPlatform.android: FadeForwardsPageTransitionsBuilder(),
+          TargetPlatform.iOS: FadeForwardsPageTransitionsBuilder(),
+          TargetPlatform.windows: FadeUpwardsPageTransitionsBuilder(),
+          TargetPlatform.macOS: FadeForwardsPageTransitionsBuilder(),
+          TargetPlatform.linux: FadeUpwardsPageTransitionsBuilder(),
+        },
+      ),
       colorScheme: const ColorScheme(
         brightness: Brightness.light,
         primary: AppColors.primary,

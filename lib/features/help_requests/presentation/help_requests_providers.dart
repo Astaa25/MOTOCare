@@ -73,17 +73,28 @@ class HelpRequestActionState {
 /// Notifier pengelola aksi bantuan mekanik (Create, Cancel, Advance)
 class HelpRequestActionNotifier extends StateNotifier<HelpRequestActionState> {
   final Ref _ref;
+  final Map<String, ServiceRequest> _idempotentCache = <String, ServiceRequest>{};
 
   HelpRequestActionNotifier(this._ref) : super(const HelpRequestActionState());
 
   HelpRequestRepository get _repo => _ref.read(helpRequestRepositoryProvider);
 
-  /// Membuat permintaan bantuan mekanik baru
+  /// Membuat permintaan bantuan mekanik baru dengan proteksi idempotency key
   Future<ServiceRequest?> createRequest(ServiceRequest request) async {
+    // Idempotency check: jika key yang sama terkirim berulang kali (akibat retry), kembalikan hasil yang sama
+    if (request.idempotencyKey != null &&
+        _idempotentCache.containsKey(request.idempotencyKey!)) {
+      return _idempotentCache[request.idempotencyKey!];
+    }
+
     state = state.copyWith(isLoading: true, errorMessage: null);
 
     try {
       final created = await _repo.createRequest(request);
+
+      if (request.idempotencyKey != null) {
+        _idempotentCache[request.idempotencyKey!] = created;
+      }
 
       // Jika dalam mode mock, jadwalkan simulasi mekanik otomatis
       if (AppEnv.useMock) {

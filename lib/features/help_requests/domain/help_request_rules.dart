@@ -24,6 +24,33 @@ class HelpRequestRules {
     return null;
   }
 
+  /// Bounding box geografis Kota Lhokseumawe & Kabupaten Aceh Utara
+  static const double minLat = 4.70;
+  static const double maxLat = 5.35;
+  static const double minLng = 96.80;
+  static const double maxLng = 97.50;
+
+  /// Memeriksa apakah koordinat atau nama wilayah berada dalam cakupan layanan
+  static bool isWithinServiceArea({
+    double? latitude,
+    double? longitude,
+    String? cityRegency,
+  }) {
+    if (cityRegency != null && cityRegency.isNotEmpty) {
+      final clean = cityRegency.toLowerCase();
+      if (clean.contains('lhokseumawe') || clean.contains('aceh utara')) {
+        return true;
+      }
+    }
+    if (latitude != null && longitude != null) {
+      return latitude >= minLat &&
+          latitude <= maxLat &&
+          longitude >= minLng &&
+          longitude <= maxLng;
+    }
+    return true;
+  }
+
   /// Validasi alamat atau lokasi: minimal 5 karakter atau GPS tersedia (PRD 6.7)
   static String? validateAddress({
     required String? addressText,

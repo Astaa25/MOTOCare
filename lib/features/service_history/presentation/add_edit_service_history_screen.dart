@@ -291,11 +291,14 @@ class _AddEditServiceHistoryScreenState
                       children: <Widget>[
                         const Icon(Icons.calendar_today_rounded, size: 18, color: AppColors.textSecondary),
                         const SizedBox(width: 12),
-                        Text(
-                          AppFormatters.dateShort(_selectedDate),
-                          style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: AppColors.textPrimary),
+                        Expanded(
+                          child: Text(
+                            AppFormatters.dateShort(_selectedDate),
+                            style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: AppColors.textPrimary),
+                            overflow: TextOverflow.ellipsis,
+                          ),
                         ),
-                        const Spacer(),
+                        const SizedBox(width: 8),
                         const Text(
                           'Pilih Tanggal',
                           style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.primary),

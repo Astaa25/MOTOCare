@@ -27,9 +27,9 @@ class MockServiceHistoryRepository implements ServiceHistoryRepository {
           serviceDate: DateTime(2026, 9, 20),
           mileage: 12000,
           serviceType: 'Servis berkala',
-          description: 'Servis CVT, pembersihan injektor, dan pemeriksaan kelistrikan (Demo/Simulasi)',
+          description: 'Servis CVT, pembersihan injektor, dan pemeriksaan kelistrikan',
           cost: 150000,
-          workshopName: 'Bengkel Resmi Honda Lhokseumawe (Demo)',
+          workshopName: 'Bengkel Resmi Honda Lhokseumawe',
           createdAt: DateTime(2026, 9, 20, 14, 30),
         ),
         ServiceHistory(
@@ -39,9 +39,9 @@ class MockServiceHistoryRepository implements ServiceHistoryRepository {
           serviceDate: DateTime(2026, 8, 15),
           mileage: 10000,
           serviceType: 'Ganti oli',
-          description: 'Ganti oli mesin MPX2 dan pembersihan saringan udara (Demo/Simulasi)',
+          description: 'Ganti oli mesin MPX2 dan pembersihan saringan udara',
           cost: 85000,
-          workshopName: 'AHASS Surya Motor Lhokseumawe (Demo)',
+          workshopName: 'AHASS Surya Motor Lhokseumawe',
           createdAt: DateTime(2026, 8, 15, 10, 0),
         ),
       ]);

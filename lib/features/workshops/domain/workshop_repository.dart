@@ -8,6 +8,8 @@ abstract class WorkshopRepository {
     String? cityOrRegency,
     int page = 1,
     int limit = 20,
+    double? latitude,
+    double? longitude,
   });
 
   /// Mengambil detail satu bengkel berdasarkan id

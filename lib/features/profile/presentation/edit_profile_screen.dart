@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import '../../../core/config/env.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/utils/validators.dart';
 import '../../../core/widgets/app_dialogs.dart';
@@ -54,22 +55,115 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
   Widget build(BuildContext context) {
     final authState = ref.watch(authStateProvider);
     final user = authState.user;
+    final displayName = user?.fullName ?? '';
+
+    String getInitials(String name) {
+      if (name.trim().isEmpty) return 'U';
+      final parts = name.trim().split(RegExp(r'\s+'));
+      if (parts.length >= 2) {
+        return '${parts[0][0]}${parts[1][0]}'.toUpperCase();
+      }
+      return parts[0][0].toUpperCase();
+    }
 
     return Scaffold(
+      backgroundColor: AppColors.background,
       appBar: AppBar(
-        title: const Text('Ubah Profil'),
+        title: const Text(
+          'Edit profil',
+          style: TextStyle(
+            fontSize: 20,
+            fontWeight: FontWeight.w800,
+            color: AppColors.deepTeal,
+          ),
+        ),
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        actions: <Widget>[
+          if (AppEnv.showDemoFeatures)
+            Container(
+              margin: const EdgeInsets.only(right: 16),
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+              decoration: BoxDecoration(
+                color: AppColors.softPeach,
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: const Text(
+                'Simulasi',
+                style: TextStyle(
+                  fontSize: 11,
+                  fontWeight: FontWeight.w700,
+                  color: AppColors.action,
+                ),
+              ),
+            ),
+        ],
       ),
       body: SafeArea(
         child: SingleChildScrollView(
-          padding: const EdgeInsets.all(24.0),
+          padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 12.0),
           child: Form(
             key: _formKey,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: <Widget>[
+                // Header Avatar & Info Akun (Figma 06.05)
+                Row(
+                  children: <Widget>[
+                    CircleAvatar(
+                      radius: 32,
+                      backgroundColor: AppColors.softMint,
+                      child: Text(
+                        getInitials(displayName),
+                        style: const TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.w800,
+                          color: AppColors.deepTeal,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 16),
+                    const Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: <Widget>[
+                          Text(
+                            'Informasi akunmu',
+                            style: TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.w800,
+                              color: AppColors.deepTeal,
+                            ),
+                          ),
+                          SizedBox(height: 2),
+                          Text(
+                            'Pastikan kontak masih aktif.',
+                            style: TextStyle(
+                              fontSize: 13,
+                              color: AppColors.textSecondary,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 24),
+
+                // Nama Lengkap
+                AppTextField(
+                  key: const Key('edit_profile_name_field'),
+                  controller: _nameController,
+                  label: 'Nama lengkap',
+                  hint: 'Masukkan nama lengkap',
+                  prefixIcon: Icons.person_outline_rounded,
+                  validator: AppValidators.validateFullName,
+                ),
+                const SizedBox(height: 16),
+
                 // Email (Readonly)
                 AppTextField(
-                  label: 'Alamat Email',
+                  label: 'Email',
                   controller: TextEditingController(text: user?.email ?? ''),
                   enabled: false,
                   readOnly: true,
@@ -78,59 +172,41 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                 ),
                 const SizedBox(height: 16),
 
-                // Nama Lengkap
-                AppTextField(
-                  key: const Key('edit_profile_name_field'),
-                  controller: _nameController,
-                  label: 'Nama Lengkap',
-                  hint: 'Masukkan nama lengkap',
-                  prefixIcon: Icons.person_outline_rounded,
-                  validator: AppValidators.validateFullName,
-                ),
-                const SizedBox(height: 16),
-
-                // Nomor Telepon
+                // Nomor HP
                 AppTextField(
                   key: const Key('edit_profile_phone_field'),
                   controller: _phoneController,
-                  label: 'Nomor Telepon',
-                  hint: 'Contoh: 081234567890',
+                  label: 'Nomor HP',
+                  hint: '0812 3456 7890',
                   keyboardType: TextInputType.phone,
                   prefixIcon: Icons.phone_outlined,
                   validator: AppValidators.validatePhone,
                 ),
-                const SizedBox(height: 16),
+                const SizedBox(height: 20),
 
-                // Peran Akun (Non-editable demi keamanan PRD 5.3 & SEC-03)
+                // Catatan Keamanan & Privasi (Figma 06.05)
                 Container(
                   padding: const EdgeInsets.all(14),
                   decoration: BoxDecoration(
-                    color: AppColors.cream,
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: AppColors.peach),
+                    color: AppColors.softMint,
+                    borderRadius: BorderRadius.circular(14),
+                    border: Border.all(color: const Color(0xFFCDE5DE)),
                   ),
-                  child: Row(
-                    children: <Widget>[
-                      const Icon(Icons.shield_outlined, color: AppColors.primary, size: 20),
-                      const SizedBox(width: 10),
-                      Expanded(
-                        child: Text(
-                          'Peran Akun: ${user?.role == 'admin' ? 'Administrator' : 'Pengguna Biasa'} (Terkunci oleh sistem keamanan RLS)',
-                          style: const TextStyle(
-                            fontSize: 12,
-                            fontWeight: FontWeight.w600,
-                            color: AppColors.primaryText,
-                          ),
-                        ),
-                      ),
-                    ],
+                  child: const Text(
+                    'Nomor HP digunakan untuk menghubungimu saat ada permintaan bantuan.',
+                    style: TextStyle(
+                      fontSize: 12.5,
+                      color: AppColors.deepTeal,
+                      height: 1.4,
+                      fontWeight: FontWeight.w500,
+                    ),
                   ),
                 ),
-                const SizedBox(height: 28),
+                const SizedBox(height: 32),
 
                 PrimaryButton(
                   key: const Key('edit_profile_save_button'),
-                  label: 'Simpan Perubahan',
+                  label: 'Simpan perubahan',
                   isLoading: authState.isLoading,
                   onPressed: _handleSave,
                 ),

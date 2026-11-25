@@ -84,12 +84,12 @@ class Motorcycle {
   factory Motorcycle.fromJson(Map<String, dynamic> json) {
     return Motorcycle(
       id: json['id'] as String,
-      userId: (json['user_id'] ?? json['userId']) as String,
+      userId: (json['owner_id'] ?? json['user_id'] ?? json['userId']) as String,
       brand: json['brand'] as String,
       model: json['model'] as String,
       productionYear: (json['production_year'] ?? json['productionYear']) as int,
       licensePlate: (json['license_plate'] ?? json['licensePlate']) as String?,
-      currentMileage: (json['current_mileage'] ?? json['currentMileage']) as int,
+      currentMileage: (json['current_km'] ?? json['current_mileage'] ?? json['currentMileage'] ?? 0) as int,
       mileageUpdatedAt: json['mileage_updated_at'] != null
           ? DateTime.parse(json['mileage_updated_at'] as String)
           : DateTime.now(),

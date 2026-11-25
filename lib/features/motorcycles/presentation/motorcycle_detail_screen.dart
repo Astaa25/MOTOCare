@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/utils/formatters.dart';
+import '../../../core/widgets/app_background.dart';
 import '../../../core/widgets/app_dialogs.dart';
 import '../../../core/widgets/error_state.dart';
 import '../../../core/widgets/loading_skeleton.dart';
@@ -26,7 +27,7 @@ class MotorcycleDetailScreen extends ConsumerWidget {
     final motorAsync = ref.watch(motorcycleDetailProvider(motorcycleId));
 
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: Colors.transparent,
       appBar: AppBar(
         title: const Text('Detail Sepeda Motor'),
         actions: <Widget>[
@@ -38,7 +39,8 @@ class MotorcycleDetailScreen extends ConsumerWidget {
           ),
         ],
       ),
-      body: SafeArea(
+      body: AppBackground(
+        child: SafeArea(
         child: motorAsync.when(
           loading: () => ListView(
             padding: const EdgeInsets.all(20),
@@ -60,7 +62,7 @@ class MotorcycleDetailScreen extends ConsumerWidget {
                 // Kartu Utama Motor
                 Container(
                   decoration: BoxDecoration(
-                    color: AppColors.background,
+                    color: AppColors.surfaceBright,
                     borderRadius: BorderRadius.circular(16),
                     border: Border.all(color: AppColors.border, width: 1.2),
                     boxShadow: <BoxShadow>[
@@ -82,18 +84,21 @@ class MotorcycleDetailScreen extends ConsumerWidget {
                         ),
                         child: Row(
                           children: <Widget>[
-                            Container(
-                              width: 56,
-                              height: 56,
-                              decoration: BoxDecoration(
-                                color: Colors.white,
-                                borderRadius: BorderRadius.circular(14),
-                                border: Border.all(color: AppColors.peach),
-                              ),
-                              child: const Icon(
-                                Icons.two_wheeler_rounded,
-                                color: AppColors.primary,
-                                size: 32,
+                            Hero(
+                              tag: 'motor_icon_${motor.id}',
+                              child: Container(
+                                width: 56,
+                                height: 56,
+                                decoration: BoxDecoration(
+                                  color: Colors.white,
+                                  borderRadius: BorderRadius.circular(14),
+                                  border: Border.all(color: AppColors.peach),
+                                ),
+                                child: const Icon(
+                                  Icons.two_wheeler_rounded,
+                                  color: AppColors.primary,
+                                  size: 32,
+                                ),
                               ),
                             ),
                             const SizedBox(width: 16),
@@ -119,34 +124,48 @@ class MotorcycleDetailScreen extends ConsumerWidget {
                                   ),
                                   if (motor.licensePlate != null && motor.licensePlate!.isNotEmpty) ...<Widget>[
                                     const SizedBox(height: 4),
-                                    Container(
-                                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                                      decoration: BoxDecoration(
-                                        color: Colors.white,
-                                        borderRadius: BorderRadius.circular(4),
-                                        border: Border.all(color: AppColors.border),
-                                      ),
-                                      child: Text(
-                                        AppFormatters.licensePlate(motor.licensePlate!),
-                                        style: const TextStyle(
-                                          fontSize: 12,
-                                          fontWeight: FontWeight.w700,
-                                          color: AppColors.textPrimary,
+                                    Hero(
+                                      tag: 'motor_plate_${motor.id}',
+                                      child: Container(
+                                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2.5),
+                                        decoration: BoxDecoration(
+                                          color: Colors.white,
+                                          borderRadius: BorderRadius.circular(5),
+                                          border: Border.all(color: AppColors.charcoalGreen, width: 1.6),
+                                          boxShadow: <BoxShadow>[
+                                            BoxShadow(
+                                              color: Colors.black.withValues(alpha: 0.08),
+                                              blurRadius: 3,
+                                              offset: const Offset(0, 1),
+                                            ),
+                                          ],
+                                        ),
+                                        child: Text(
+                                          AppFormatters.licensePlate(motor.licensePlate!),
+                                          style: const TextStyle(
+                                            fontSize: 11,
+                                            fontWeight: FontWeight.w900,
+                                            color: AppColors.charcoalDark,
+                                            letterSpacing: 0.8,
+                                            fontFeatures: <FontFeature>[FontFeature.tabularFigures()],
+                                          ),
                                         ),
                                       ),
+                                    ),
+                                  ],
+                                  if (motor.isMileageStale) ...<Widget>[
+                                    const SizedBox(height: 6),
+                                    const StatusChip(
+                                      label: 'KM Perlu Update',
+                                      icon: Icons.warning_amber_rounded,
+                                      textColor: AppColors.warning,
+                                      backgroundColor: Color(0xFFFFF4E5),
+                                      borderColor: AppColors.peach,
                                     ),
                                   ],
                                 ],
                               ),
                             ),
-                            if (motor.isMileageStale)
-                              const StatusChip(
-                                label: 'KM Perlu Update',
-                                icon: Icons.warning_amber_rounded,
-                                textColor: AppColors.warning,
-                                backgroundColor: Color(0xFFFFF4E5),
-                                borderColor: AppColors.peach,
-                              ),
                           ],
                         ),
                       ),
@@ -154,8 +173,11 @@ class MotorcycleDetailScreen extends ConsumerWidget {
                       // Statistik kilometer
                       Padding(
                         padding: const EdgeInsets.all(20),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        child: Wrap(
+                          alignment: WrapAlignment.spaceBetween,
+                          crossAxisAlignment: WrapCrossAlignment.center,
+                          spacing: 12,
+                          runSpacing: 12,
                           children: <Widget>[
                             Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
@@ -290,6 +312,7 @@ class MotorcycleDetailScreen extends ConsumerWidget {
           },
         ),
       ),
-    );
-  }
+    ),
+  );
+}
 }

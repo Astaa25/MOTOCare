@@ -11,10 +11,10 @@ void main() {
       ),
     );
 
-    // Verifikasi teks merek dan slogan muncul
+    // Verifikasi teks merek dan slogan resmi Figma muncul
     expect(find.text('MOTO'), findsOneWidget);
     expect(find.text('CARE'), findsOneWidget);
-    expect(find.text('Rawat Motor Anda Tanpa Cemas'), findsOneWidget);
+    expect(find.text('Teman andalan di perjalanan.'), findsOneWidget);
 
     // Majukan waktu hingga inisialisasi (1200ms) dan durasi minimum splash (3000ms) selesai
     await tester.pump(const Duration(milliseconds: 3200));

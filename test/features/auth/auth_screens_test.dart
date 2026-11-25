@@ -139,14 +139,14 @@ void main() {
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 300));
 
-      // Verifikasi komponen profil tampil
-      expect(find.text('Profil Saya'), findsOneWidget);
+      // Verifikasi komponen profil tampil (Figma 06.04)
+      expect(find.text('Akun saya'), findsOneWidget);
       expect(find.text('Abrar Pengguna Demo'), findsWidgets);
       expect(find.text(MockAuthRepository.demoEmail), findsOneWidget);
 
       // Ketuk tombol logout
       await tester.scrollUntilVisible(find.byKey(const Key('profile_logout_button')), 100);
-      expect(find.text('Keluar dari Akun'), findsOneWidget);
+      expect(find.text('Keluar dari akun'), findsOneWidget);
       await tester.tap(find.byKey(const Key('profile_logout_button')));
       await tester.pumpAndSettle();
 

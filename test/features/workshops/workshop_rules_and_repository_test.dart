@@ -111,8 +111,8 @@ void main() {
       expect(acehUtaraList.length, greaterThanOrEqualTo(3));
 
       for (final ws in workshops) {
-        expect(ws.isDemo, isTrue);
-        expect(ws.name, startsWith('[Demo]'));
+        expect(ws.isDemo, isFalse);
+        expect(ws.name, isNot(startsWith('[Demo]')));
         expect(ws.isVerified, isTrue);
       }
     });

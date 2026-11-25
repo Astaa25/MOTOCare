@@ -3,9 +3,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../core/config/app_constants.dart';
-import '../../../core/config/env.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/motion.dart';
+import '../../../core/widgets/animated_loading.dart';
 import 'auth_state_provider.dart';
 
 /// Layar Splash Screen MotoCare dengan animasi halus 3-5 detik,
@@ -183,23 +183,13 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
       body: Container(
         width: double.infinity,
         height: double.infinity,
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: <Color>[
-              Color(0xFFFFF7F0),
-              Color(0xFFFFE8D6),
-              Color(0xFFFFFFFF),
-            ],
-          ),
-        ),
+        color: AppColors.coral,
         child: SafeArea(
           child: Column(
             children: <Widget>[
-              const Spacer(flex: 2),
+              const Spacer(flex: 3),
 
-              // Logo dan ikon animasi motor
+              // Logo dan ikon animasi motor (Figma 01 Splash)
               AnimatedBuilder(
                 animation: _animController,
                 builder: (context, child) {
@@ -214,64 +204,58 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
                       child: Column(
                         mainAxisSize: MainAxisSize.min,
                         children: <Widget>[
-                          // Lingkaran oranye bercahaya dengan motor
+                          // Ikon motor khas MotoCare
                           Container(
-                            width: 120,
-                            height: 120,
+                            width: 100,
+                            height: 100,
                             decoration: BoxDecoration(
-                              shape: BoxShape.circle,
-                              gradient: AppColors.primaryGradient,
-                              boxShadow: <BoxShadow>[
-                                BoxShadow(
-                                  color: AppColors.primary.withValues(alpha: 0.35),
-                                  blurRadius: 28,
-                                  offset: const Offset(0, 10),
-                                ),
-                              ],
+                              color: Colors.white.withValues(alpha: 0.20),
+                              borderRadius: BorderRadius.circular(28),
                             ),
                             child: Transform.translate(
                               offset: Offset(slideX, 0),
                               child: const Icon(
                                 Icons.two_wheeler_rounded,
-                                size: 68,
-                                color: Colors.white,
+                                size: 58,
+                                color: AppColors.deepTeal,
                                 semanticLabel: 'Logo MotoCare Ikon Motor',
                               ),
                             ),
                           ),
-                          const SizedBox(height: 24),
+                          const SizedBox(height: 20),
 
-                          // Nama Aplikasi
+                          // Nama Aplikasi (Figma 01)
                           Row(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: <Widget>[
                               Text(
                                 'MOTO',
                                 style: Theme.of(context).textTheme.displayLarge?.copyWith(
-                                      color: AppColors.textPrimary,
+                                      color: AppColors.deepTeal,
                                       fontWeight: FontWeight.w800,
-                                      letterSpacing: 1.5,
+                                      letterSpacing: 0.5,
                                     ),
                               ),
                               Text(
                                 'CARE',
                                 style: Theme.of(context).textTheme.displayLarge?.copyWith(
-                                      color: AppColors.primary,
+                                      color: AppColors.deepTeal,
                                       fontWeight: FontWeight.w900,
-                                      letterSpacing: 1.5,
+                                      letterSpacing: 0.5,
                                     ),
                               ),
                             ],
                           ),
-                          const SizedBox(height: 8),
+                          const SizedBox(height: 6),
 
-                          // Slogan
-                          Text(
-                            'Rawat Motor Anda Tanpa Cemas',
-                            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                                  color: AppColors.textSecondary,
-                                  fontWeight: FontWeight.w500,
-                                ),
+                          // Slogan resmi Figma
+                          const Text(
+                            'Teman andalan di perjalanan.',
+                            style: TextStyle(
+                              fontSize: 14,
+                              color: AppColors.deepTeal,
+                              fontWeight: FontWeight.w600,
+                            ),
                           ),
                         ],
                       ),
@@ -280,27 +264,27 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
                 },
               ),
 
-              const Spacer(flex: 2),
+              const Spacer(flex: 3),
 
-              // Bagian indikator status dan progress
+              // Bagian indikator status dan progress startup
               Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 40.0),
+                padding: const EdgeInsets.symmetric(horizontal: 48.0),
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: <Widget>[
                     if (_hasError) ...<Widget>[
                       const Icon(
                         Icons.error_outline_rounded,
-                        color: AppColors.error,
+                        color: Colors.white,
                         size: 32,
                       ),
                       const SizedBox(height: 8),
                       Text(
                         _statusMessage,
                         style: const TextStyle(
-                          color: AppColors.error,
+                          color: Colors.white,
                           fontSize: 13,
-                          fontWeight: FontWeight.w500,
+                          fontWeight: FontWeight.w600,
                         ),
                         textAlign: TextAlign.center,
                       ),
@@ -311,28 +295,24 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
                         icon: const Icon(Icons.refresh_rounded, size: 18),
                         label: const Text('Coba Lagi'),
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: AppColors.primary,
-                          foregroundColor: AppColors.onPrimary,
+                          backgroundColor: AppColors.action,
+                          foregroundColor: Colors.white,
                           minimumSize: const Size(160, 44),
                         ),
                       ),
                     ] else ...<Widget>[
-                      const SizedBox(
-                        width: 32,
-                        height: 32,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 3,
-                          valueColor: AlwaysStoppedAnimation<Color>(AppColors.primary),
-                        ),
+                      // Indikator loading startup berkarakter MotoCare
+                      MotoCareLoadingIndicator.small(
+                        color: AppColors.action,
                       ),
                       const SizedBox(height: 14),
                       Text(
                         _statusMessage,
                         key: const Key('splash_status_text'),
                         style: const TextStyle(
-                          color: AppColors.textSecondary,
+                          color: AppColors.deepTeal,
                           fontSize: 13,
-                          fontWeight: FontWeight.w500,
+                          fontWeight: FontWeight.w600,
                         ),
                         textAlign: TextAlign.center,
                       ),
@@ -341,28 +321,19 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
                 ),
               ),
 
-              const SizedBox(height: 32),
+              const SizedBox(height: 28),
 
-              // Badge status demo atau versi di footer
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-                decoration: BoxDecoration(
-                  color: AppColors.cream,
-                  borderRadius: BorderRadius.circular(999),
-                  border: Border.all(color: AppColors.peach, width: 0.8),
-                ),
-                child: const Text(
-                  AppEnv.useMock
-                      ? 'Mode: Demo / Simulasi'
-                      : 'Koneksi: Supabase Live',
-                  style: TextStyle(
-                    color: AppColors.primaryText,
-                    fontSize: 11,
-                    fontWeight: FontWeight.w600,
-                  ),
+              // Footer resmi Figma: BANTUAN · BENGKEL · PERAWATAN
+              const Text(
+                'BANTUAN • BENGKEL • PERAWATAN',
+                style: TextStyle(
+                  color: AppColors.deepTeal,
+                  fontSize: 10.5,
+                  fontWeight: FontWeight.w800,
+                  letterSpacing: 1.2,
                 ),
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: 20),
             ],
           ),
         ),

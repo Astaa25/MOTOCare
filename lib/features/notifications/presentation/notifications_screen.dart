@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import '../../../core/config/env.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/utils/formatters.dart';
+import '../../../core/widgets/animated_effects.dart';
 import '../../../core/widgets/empty_state.dart';
 import '../../../core/widgets/error_state.dart';
 import '../../../core/widgets/loading_skeleton.dart';
@@ -21,14 +23,33 @@ class NotificationsScreen extends ConsumerWidget {
       backgroundColor: AppColors.background,
       appBar: AppBar(
         title: const Text(
-          'Pusat Notifikasi',
+          'Notifikasi',
           style: TextStyle(
-            fontSize: 16,
-            fontWeight: FontWeight.w700,
-            color: AppColors.textPrimary,
+            fontSize: 18,
+            fontWeight: FontWeight.w800,
+            color: AppColors.deepTeal,
           ),
         ),
+        backgroundColor: Colors.transparent,
+        elevation: 0,
         actions: <Widget>[
+          if (AppEnv.showDemoFeatures)
+            Container(
+              margin: const EdgeInsets.only(right: 6),
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+              decoration: BoxDecoration(
+                color: AppColors.softPeach,
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: const Text(
+                'Simulasi',
+                style: TextStyle(
+                  fontSize: 10,
+                  fontWeight: FontWeight.w700,
+                  color: AppColors.action,
+                ),
+              ),
+            ),
           notifsAsync.maybeWhen(
             data: (list) {
               final hasUnread = list.any((n) => !n.isRead);
@@ -36,20 +57,26 @@ class NotificationsScreen extends ConsumerWidget {
 
               return TextButton(
                 key: const Key('mark_all_read_button'),
+                style: TextButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(horizontal: 8),
+                  minimumSize: Size.zero,
+                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                ),
                 onPressed: () =>
                     ref.read(notificationsNotifierProvider.notifier).markAllAsRead(),
                 child: const Text(
                   'Tandai Dibaca',
                   style: TextStyle(
-                    fontSize: 13,
+                    fontSize: 11,
                     fontWeight: FontWeight.w700,
-                    color: AppColors.primary,
+                    color: AppColors.action,
                   ),
                 ),
               );
             },
             orElse: () => const SizedBox.shrink(),
           ),
+          const SizedBox(width: 8),
         ],
       ),
       body: SafeArea(
@@ -59,12 +86,7 @@ class NotificationsScreen extends ConsumerWidget {
             ref.invalidate(notificationsProvider);
           },
           child: notifsAsync.when(
-            loading: () => ListView.separated(
-              padding: const EdgeInsets.all(16),
-              itemCount: 4,
-              separatorBuilder: (context, index) => const SizedBox(height: 12),
-              itemBuilder: (context, index) => const LoadingSkeleton(height: 90, borderRadius: 14),
-            ),
+            loading: () => LoadingSkeleton.notificationList(),
             error: (err, _) => Center(
               child: Padding(
                 padding: const EdgeInsets.all(24),
@@ -99,24 +121,27 @@ class NotificationsScreen extends ConsumerWidget {
                 separatorBuilder: (context, index) => const SizedBox(height: 10),
                 itemBuilder: (context, index) {
                   final notif = notifications[index];
-                  return _NotificationCard(
-                    key: Key('notification_card_${notif.id}'),
-                    notification: notif,
-                    onTap: () async {
-                      if (!notif.isRead) {
-                        await ref
-                            .read(notificationsNotifierProvider.notifier)
-                            .markAsRead(notif.id);
-                      }
-
-                      if (context.mounted && notif.relatedId != null) {
-                        if (notif.type == NotificationType.reminder) {
-                          context.push('/reminders/${notif.relatedId}');
-                        } else if (notif.type == NotificationType.requestStatus) {
-                          context.push('/help/${notif.relatedId}');
+                  return AnimatedEntrance(
+                    index: index,
+                    child: _NotificationCard(
+                      key: Key('notification_card_${notif.id}'),
+                      notification: notif,
+                      onTap: () async {
+                        if (!notif.isRead) {
+                          await ref
+                              .read(notificationsNotifierProvider.notifier)
+                              .markAsRead(notif.id);
                         }
-                      }
-                    },
+
+                        if (context.mounted && notif.relatedId != null) {
+                          if (notif.type == NotificationType.reminder) {
+                            context.push('/reminders/${notif.relatedId}');
+                          } else if (notif.type == NotificationType.requestStatus) {
+                            context.push('/help/${notif.relatedId}');
+                          }
+                        }
+                      },
+                    ),
                   );
                 },
               );
@@ -141,30 +166,26 @@ class _NotificationCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     IconData icon;
-    Color iconColor;
 
     switch (notification.type) {
       case NotificationType.reminder:
         icon = Icons.alarm_rounded;
-        iconColor = AppColors.warning;
         break;
       case NotificationType.requestStatus:
         icon = Icons.build_circle_rounded;
-        iconColor = AppColors.primary;
         break;
       case NotificationType.system:
         icon = Icons.info_outline_rounded;
-        iconColor = AppColors.textSecondary;
         break;
     }
 
     return Material(
-      color: notification.isRead ? Colors.white : const Color(0xFFFFF9F5),
+      color: notification.isRead ? Colors.white : AppColors.softPeach.withValues(alpha: 0.6),
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(14),
+        borderRadius: BorderRadius.circular(16),
         side: BorderSide(
-          color: notification.isRead ? AppColors.border : AppColors.peach,
-          width: notification.isRead ? 1.0 : 1.5,
+          color: notification.isRead ? const Color(0xFFF0EAE1) : AppColors.action.withValues(alpha: 0.3),
+          width: 1.0,
         ),
       ),
       clipBehavior: Clip.antiAlias,
@@ -176,13 +197,13 @@ class _NotificationCard extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: <Widget>[
               Container(
-                width: 38,
-                height: 38,
+                width: 42,
+                height: 42,
                 decoration: BoxDecoration(
-                  color: AppColors.cream,
-                  borderRadius: BorderRadius.circular(10),
+                  color: notification.isRead ? AppColors.softPeach : Colors.white,
+                  borderRadius: BorderRadius.circular(12),
                 ),
-                child: Icon(icon, color: iconColor, size: 20),
+                child: Icon(icon, color: AppColors.deepTeal, size: 22),
               ),
               const SizedBox(width: 12),
               Expanded(
@@ -195,12 +216,10 @@ class _NotificationCard extends StatelessWidget {
                         Expanded(
                           child: Text(
                             notification.title,
-                            style: TextStyle(
+                            style: const TextStyle(
                               fontSize: 14,
-                              fontWeight: notification.isRead
-                                  ? FontWeight.w600
-                                  : FontWeight.w700,
-                              color: AppColors.textPrimary,
+                              fontWeight: FontWeight.w700,
+                              color: AppColors.deepTeal,
                             ),
                           ),
                         ),
@@ -211,7 +230,7 @@ class _NotificationCard extends StatelessWidget {
                             height: 8,
                             margin: const EdgeInsets.only(top: 4),
                             decoration: const BoxDecoration(
-                              color: AppColors.primary,
+                              color: AppColors.action,
                               shape: BoxShape.circle,
                             ),
                           ),
@@ -238,6 +257,11 @@ class _NotificationCard extends StatelessWidget {
                     ),
                   ],
                 ),
+              ),
+              const Icon(
+                Icons.chevron_right_rounded,
+                color: AppColors.textSecondary,
+                size: 20,
               ),
             ],
           ),

@@ -228,10 +228,10 @@ void main() {
       await tester.pump();
       await tester.pumpAndSettle();
 
-      // Verifikasi status dan elemen
+      // Verifikasi status dan elemen (production mode bebas badge demo)
       expect(find.text('Menunggu Konfirmasi'), findsOneWidget);
       expect(find.text('Kelistrikan / Aki Mati'), findsOneWidget);
-      expect(find.byKey(const Key('help_request_demo_badge')), findsOneWidget);
+      expect(find.byKey(const Key('help_request_demo_badge')), findsNothing);
       expect(find.byKey(const Key('cancel_help_request_button')), findsOneWidget);
 
       // Tekan batalkan panggilan montir
@@ -293,10 +293,10 @@ void main() {
       await tester.pump();
       await tester.pumpAndSettle();
 
-      // Verifikasi info mekanik
+      // Verifikasi info mekanik & live map tracking yang langsung tampil
       expect(find.text('Dalam Perjalanan'), findsOneWidget);
       expect(find.text('Mekanik yang Ditugaskan'), findsOneWidget);
-      expect(find.text('Agus Mekanik Hebat'), findsOneWidget);
+      expect(find.text('Agus Mekanik Hebat'), findsAtLeastNWidgets(1));
       expect(find.text('Bengkel Resmi Jaya'), findsOneWidget);
       expect(find.byKey(const Key('call_mechanic_button')), findsOneWidget);
     });

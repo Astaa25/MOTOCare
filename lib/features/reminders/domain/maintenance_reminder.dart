@@ -95,24 +95,36 @@ class MaintenanceReminder {
   }
 
   factory MaintenanceReminder.fromJson(Map<String, dynamic> json) {
+    DateTime? parsedDate;
+    final dynamic rawDate = json['target_date'] ?? json['reminder_date'];
+    if (rawDate is String) {
+      parsedDate = DateTime.tryParse(rawDate);
+    }
+
+    final dynamic rawTargetKm = json['target_km'] ?? json['target_mileage'];
+    int? parsedTargetKm;
+    if (rawTargetKm is num) {
+      parsedTargetKm = rawTargetKm.toInt();
+    } else if (rawTargetKm is String) {
+      parsedTargetKm = int.tryParse(rawTargetKm);
+    }
+
     return MaintenanceReminder(
-      id: json['id'] as String,
-      motorcycleId: (json['motorcycle_id'] ?? '') as String,
+      id: (json['id'] ?? '') as String,
+      motorcycleId: (json['vehicle_id'] ?? json['motorcycle_id'] ?? '') as String,
       userId: (json['user_id'] ?? '') as String,
-      title: (json['title'] ?? '') as String,
-      serviceType: json['service_type'] as String?,
-      reminderDate: json['reminder_date'] != null
-          ? DateTime.parse(json['reminder_date'] as String)
-          : null,
-      targetMileage: json['target_mileage'] as int?,
-      intervalKm: json['interval_km'] as int?,
-      intervalMonths: json['interval_months'] as int?,
+      title: (json['title'] ?? json['notes'] ?? json['service_type'] ?? 'Pengingat Servis') as String,
+      serviceType: (json['service_type'] ?? json['title']) as String?,
+      reminderDate: parsedDate,
+      targetMileage: parsedTargetKm,
+      intervalKm: (json['interval_km'] as num?)?.toInt(),
+      intervalMonths: (json['interval_months'] as num?)?.toInt(),
       status: StoredReminderStatus.fromString((json['status'] ?? 'active') as String),
       completedAt: json['completed_at'] != null
-          ? DateTime.parse(json['completed_at'] as String)
+          ? DateTime.tryParse(json['completed_at'] as String)
           : null,
       createdAt: json['created_at'] != null
-          ? DateTime.parse(json['created_at'] as String)
+          ? DateTime.tryParse(json['created_at'] as String) ?? DateTime.now()
           : DateTime.now(),
     );
   }

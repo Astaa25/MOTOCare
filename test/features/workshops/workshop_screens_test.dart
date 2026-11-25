@@ -39,12 +39,12 @@ void main() {
       expect(find.byKey(const Key('permanent_coverage_notice')), findsOneWidget);
       expect(find.text(WorkshopRules.permanentCoverageNotice), findsOneWidget);
 
-      // Verifikasi lencana Demo/Simulasi
-      expect(find.byKey(const Key('demo_workshop_badge')), findsWidgets);
+      // Verifikasi mode produksi tidak menampilkan lencana Demo/Simulasi
+      expect(find.byKey(const Key('demo_workshop_badge')), findsNothing);
 
-      // Verifikasi daftar bengkel awal
+      // Verifikasi daftar bengkel awal tanpa prefiks [Demo]
       expect(
-        find.text('[Demo] Bengkel Resmi Samudera Motor Lhokseumawe'),
+        find.text('Bengkel Resmi Samudera Motor Lhokseumawe'),
         findsOneWidget,
       );
     });
@@ -65,12 +65,12 @@ void main() {
 
       // Bengkel Barokah Motor Lhoksukon harus tampil
       expect(
-        find.text('[Demo] Bengkel Barokah Motor Lhoksukon'),
+        find.text('Bengkel Barokah Motor Lhoksukon'),
         findsOneWidget,
       );
       // Bengkel lain di Lhokseumawe tidak boleh tampil
       expect(
-        find.text('[Demo] Bengkel Resmi Samudera Motor Lhokseumawe'),
+        find.text('Bengkel Resmi Samudera Motor Lhokseumawe'),
         findsNothing,
       );
     });
@@ -107,7 +107,7 @@ void main() {
 
       // Kembali menampilkan daftar bengkel area layanan
       expect(
-        find.text('[Demo] Bengkel Resmi Samudera Motor Lhokseumawe'),
+        find.text('Bengkel Resmi Samudera Motor Lhokseumawe'),
         findsOneWidget,
       );
     });
@@ -126,10 +126,10 @@ void main() {
 
       expect(find.text('Detail Bengkel'), findsOneWidget);
       expect(
-        find.text('[Demo] Bengkel Resmi Samudera Motor Lhokseumawe'),
+        find.text('Bengkel Resmi Samudera Motor Lhokseumawe'),
         findsOneWidget,
       );
-      expect(find.byKey(const Key('detail_demo_badge')), findsOneWidget);
+      expect(find.byKey(const Key('detail_demo_badge')), findsNothing);
       expect(find.text('Jam Operasional'), findsOneWidget);
       expect(find.text('08:00 - 17:00 WIB'), findsOneWidget);
       expect(find.byKey(const Key('call_workshop_button')), findsOneWidget);

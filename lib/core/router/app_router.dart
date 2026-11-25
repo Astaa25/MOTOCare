@@ -13,6 +13,7 @@ import '../../features/motorcycles/presentation/motorcycles_screen.dart';
 import '../../features/motorcycles/presentation/update_mileage_screen.dart';
 import '../../features/profile/presentation/edit_profile_screen.dart';
 import '../../features/profile/presentation/profile_screen.dart';
+import '../../features/notifications/presentation/notification_settings_screen.dart';
 import '../../features/notifications/presentation/notifications_screen.dart';
 import '../../features/reminders/presentation/add_edit_reminder_screen.dart';
 import '../../features/reminders/presentation/reminder_detail_screen.dart';
@@ -22,12 +23,16 @@ import '../../features/service_history/presentation/service_history_detail_scree
 import '../../features/service_history/presentation/service_history_screen.dart';
 import '../../features/help_requests/presentation/create_help_request_screen.dart';
 import '../../features/help_requests/presentation/help_request_detail_screen.dart';
+import '../../features/help_requests/presentation/live_tracking_screen.dart';
+import '../../features/help_requests/presentation/location_picker_screen.dart';
 import '../../features/help_requests/presentation/my_help_requests_screen.dart';
 import '../../features/tutorials/presentation/tutorial_detail_screen.dart';
 import '../../features/tutorials/presentation/tutorials_screen.dart';
 import '../../features/workshops/presentation/workshop_detail_screen.dart';
 import '../../features/workshops/presentation/workshops_screen.dart';
 import '../widgets/component_catalog_screen.dart';
+import '../widgets/main_navigation_shell.dart';
+import '../theme/motion.dart';
 
 /// Notifier untuk refreshListenable GoRouter agar tidak re-instansiasi pada perubahan auth
 class RouterNotifier extends ChangeNotifier {
@@ -106,79 +111,163 @@ final routerProvider = Provider<GoRouter>((ref) {
         builder: (context, state) => const ForgotPasswordScreen(),
       ),
 
-      // Beranda (M3, M5)
-      GoRoute(
-        path: '/home',
-        builder: (context, state) => const HomeScreen(),
+      // Shell Navigasi Utama (N-02 & N-03: Floating Bottom Nav)
+      ShellRoute(
+        builder: (context, state, child) {
+          return MainNavigationShell(
+            currentLocation: state.matchedLocation,
+            child: child,
+          );
+        },
+        routes: <RouteBase>[
+          // Beranda (M3, M5 - Tab 1 Pelanggan, Mekanik, Admin)
+          GoRoute(
+            path: '/home',
+            pageBuilder: (context, state) => AppMotion.fadeThroughPage(
+              key: state.pageKey,
+              child: const HomeScreen(),
+            ),
+          ),
+
+          // Aktivitas Servis & Bantuan (M7 - Tab 2 Pelanggan)
+          GoRoute(
+            path: '/help',
+            pageBuilder: (context, state) => AppMotion.fadeThroughPage(
+              key: state.pageKey,
+              child: const MyHelpRequestsScreen(),
+            ),
+          ),
+
+          // Motor Saya (M3 - Tab 3 Pelanggan)
+          GoRoute(
+            path: '/motors',
+            pageBuilder: (context, state) => AppMotion.fadeThroughPage(
+              key: state.pageKey,
+              child: const MotorcyclesScreen(),
+            ),
+          ),
+
+          // Bengkel (M6 - Tab 2 Mekanik & Admin / Rute Akses Cepat Pelanggan)
+          GoRoute(
+            path: '/workshops',
+            pageBuilder: (context, state) => AppMotion.fadeThroughPage(
+              key: state.pageKey,
+              child: WorkshopsScreen(
+                initialCity: state.uri.queryParameters['city'],
+                initialQuery: state.uri.queryParameters['query'],
+              ),
+            ),
+          ),
+
+          // Tutorial (M6 - Tab 3 Mekanik & Admin / Rute Akses Cepat Pelanggan)
+          GoRoute(
+            path: '/tutorials',
+            pageBuilder: (context, state) => AppMotion.fadeThroughPage(
+              key: state.pageKey,
+              child: const TutorialsScreen(),
+            ),
+          ),
+
+          // Profil / Akun (M2 - Tab 4 Pelanggan, Mekanik, Admin)
+          GoRoute(
+            path: '/profile',
+            pageBuilder: (context, state) => AppMotion.fadeThroughPage(
+              key: state.pageKey,
+              child: const ProfileScreen(),
+            ),
+          ),
+        ],
       ),
 
-      // Motor (M3)
+      // =======================================================================
+      // Layar Turunan (Form, Detail, Subfitur - Berada di Luar Shell Nav)
+      // Menggunakan shared axis horizontal (T-03: geser 30px + fade, 300 ms)
+      // =======================================================================
+
+      // Form Motor Baru (M3)
       GoRoute(
-        path: '/motors',
-        builder: (context, state) => const MotorcyclesScreen(),
+        path: '/motors/new',
+        pageBuilder: (context, state) => AppMotion.sharedAxisPage(
+          key: state.pageKey,
+          child: const AddEditMotorcycleScreen(),
+        ),
+      ),
+
+      // Detail Motor & Subfitur (M3)
+      GoRoute(
+        path: '/motors/:id',
+        pageBuilder: (context, state) => AppMotion.sharedAxisPage(
+          key: state.pageKey,
+          child: MotorcycleDetailScreen(
+            motorcycleId: state.pathParameters['id']!,
+          ),
+        ),
         routes: <RouteBase>[
           GoRoute(
-            path: 'new',
-            builder: (context, state) => const AddEditMotorcycleScreen(),
+            path: 'edit',
+            pageBuilder: (context, state) => AppMotion.sharedAxisPage(
+              key: state.pageKey,
+              child: AddEditMotorcycleScreen(
+                motorcycleId: state.pathParameters['id'],
+              ),
+            ),
           ),
           GoRoute(
-            path: ':id',
-            builder: (context, state) => MotorcycleDetailScreen(
-              motorcycleId: state.pathParameters['id']!,
+            path: 'mileage',
+            pageBuilder: (context, state) => AppMotion.sharedAxisPage(
+              key: state.pageKey,
+              child: UpdateMileageScreen(
+                motorcycleId: state.pathParameters['id']!,
+              ),
+            ),
+          ),
+          GoRoute(
+            path: 'services',
+            pageBuilder: (context, state) => AppMotion.sharedAxisPage(
+              key: state.pageKey,
+              child: ServiceHistoryScreen(
+                motorcycleId: state.pathParameters['id']!,
+              ),
             ),
             routes: <RouteBase>[
               GoRoute(
-                path: 'edit',
-                builder: (context, state) => AddEditMotorcycleScreen(
-                  motorcycleId: state.pathParameters['id'],
-                ),
-              ),
-              GoRoute(
-                path: 'mileage',
-                builder: (context, state) => UpdateMileageScreen(
-                  motorcycleId: state.pathParameters['id']!,
-                ),
-              ),
-              GoRoute(
-                path: 'services',
-                builder: (context, state) => ServiceHistoryScreen(
-                  motorcycleId: state.pathParameters['id']!,
-                ),
-                routes: <RouteBase>[
-                  GoRoute(
-                    path: 'new',
-                    builder: (context, state) {
-                      final extra = state.extra as Map<String, dynamic>?;
-                      final query = state.uri.queryParameters;
-                      final String? prefilledType =
-                          extra?['serviceType'] as String? ?? query['prefilledType'];
-                      final int? prefilledMileage = extra?['mileage'] as int? ??
-                          (query['prefilledMileage'] != null
-                              ? int.tryParse(query['prefilledMileage']!)
-                              : null);
-                      final String? prefilledDescription =
-                          extra?['description'] as String? ?? query['prefilledDesc'];
-                      final String? reminderId =
-                          extra?['reminderId'] as String? ?? query['reminderId'];
+                path: 'new',
+                pageBuilder: (context, state) {
+                  final extra = state.extra as Map<String, dynamic>?;
+                  final query = state.uri.queryParameters;
+                  final String? prefilledType =
+                      extra?['serviceType'] as String? ?? query['prefilledType'];
+                  final int? prefilledMileage = extra?['mileage'] as int? ??
+                      (query['prefilledMileage'] != null
+                          ? int.tryParse(query['prefilledMileage']!)
+                          : null);
+                  final String? prefilledDescription =
+                      extra?['description'] as String? ?? query['prefilledDesc'];
+                  final String? reminderId =
+                      extra?['reminderId'] as String? ?? query['reminderId'];
 
-                      return AddEditServiceHistoryScreen(
-                        motorcycleId: state.pathParameters['id']!,
-                        initialServiceType: prefilledType,
-                        initialMileage: prefilledMileage,
-                        initialDescription: prefilledDescription,
-                        reminderId: reminderId,
-                      );
-                    },
-                  ),
-                ],
-              ),
-              GoRoute(
-                path: 'reminders',
-                builder: (context, state) => RemindersScreen(
-                  motorcycleId: state.pathParameters['id']!,
-                ),
+                  return AppMotion.sharedAxisPage(
+                    key: state.pageKey,
+                    child: AddEditServiceHistoryScreen(
+                      motorcycleId: state.pathParameters['id']!,
+                      initialServiceType: prefilledType,
+                      initialMileage: prefilledMileage,
+                      initialDescription: prefilledDescription,
+                      reminderId: reminderId,
+                    ),
+                  );
+                },
               ),
             ],
+          ),
+          GoRoute(
+            path: 'reminders',
+            pageBuilder: (context, state) => AppMotion.sharedAxisPage(
+              key: state.pageKey,
+              child: RemindersScreen(
+                motorcycleId: state.pathParameters['id']!,
+              ),
+            ),
           ),
         ],
       ),
@@ -186,95 +275,124 @@ final routerProvider = Provider<GoRouter>((ref) {
       // Servis Detail (M4)
       GoRoute(
         path: '/services/:id',
-        builder: (context, state) => ServiceHistoryDetailScreen(
-          serviceId: state.pathParameters['id']!,
+        pageBuilder: (context, state) => AppMotion.sharedAxisPage(
+          key: state.pageKey,
+          child: ServiceHistoryDetailScreen(
+            serviceId: state.pathParameters['id']!,
+          ),
         ),
       ),
 
       // Pengingat (M5)
       GoRoute(
         path: '/reminders/new',
-        builder: (context, state) => AddEditReminderScreen(
-          motorcycleId: state.uri.queryParameters['motorId'],
+        pageBuilder: (context, state) => AppMotion.sharedAxisPage(
+          key: state.pageKey,
+          child: AddEditReminderScreen(
+            motorcycleId: state.uri.queryParameters['motorId'],
+          ),
         ),
       ),
       GoRoute(
         path: '/reminders/:id',
-        builder: (context, state) => ReminderDetailScreen(
-          reminderId: state.pathParameters['id']!,
+        pageBuilder: (context, state) => AppMotion.sharedAxisPage(
+          key: state.pageKey,
+          child: ReminderDetailScreen(
+            reminderId: state.pathParameters['id']!,
+          ),
         ),
         routes: <RouteBase>[
           GoRoute(
             path: 'edit',
-            builder: (context, state) => AddEditReminderScreen(
-              reminderId: state.pathParameters['id']!,
+            pageBuilder: (context, state) => AppMotion.sharedAxisPage(
+              key: state.pageKey,
+              child: AddEditReminderScreen(
+                reminderId: state.pathParameters['id']!,
+              ),
             ),
           ),
         ],
       ),
       GoRoute(
         path: '/notifications',
-        builder: (context, state) => const NotificationsScreen(),
+        pageBuilder: (context, state) => AppMotion.sharedAxisPage(
+          key: state.pageKey,
+          child: const NotificationsScreen(),
+        ),
+      ),
+      GoRoute(
+        path: '/notifications/settings',
+        pageBuilder: (context, state) => AppMotion.sharedAxisPage(
+          key: state.pageKey,
+          child: const NotificationSettingsScreen(),
+        ),
       ),
 
-      // Bengkel (M6)
+      // Bengkel Detail (M6)
       GoRoute(
-        path: '/workshops',
-        builder: (context, state) => const WorkshopsScreen(),
-        routes: <RouteBase>[
-          GoRoute(
-            path: ':id',
-            builder: (context, state) => WorkshopDetailScreen(
-              workshopId: state.pathParameters['id'] ?? '',
-            ),
+        path: '/workshops/:id',
+        pageBuilder: (context, state) => AppMotion.sharedAxisPage(
+          key: state.pageKey,
+          child: WorkshopDetailScreen(
+            workshopId: state.pathParameters['id'] ?? '',
           ),
-        ],
+        ),
       ),
 
-      // Tutorial (M6)
+      // Tutorial Detail (M6)
       GoRoute(
-        path: '/tutorials',
-        builder: (context, state) => const TutorialsScreen(),
-        routes: <RouteBase>[
-          GoRoute(
-            path: ':id',
-            builder: (context, state) => TutorialDetailScreen(
-              tutorialId: state.pathParameters['id'] ?? '',
-            ),
+        path: '/tutorials/:id',
+        pageBuilder: (context, state) => AppMotion.sharedAxisPage(
+          key: state.pageKey,
+          child: TutorialDetailScreen(
+            tutorialId: state.pathParameters['id'] ?? '',
           ),
-        ],
+        ),
       ),
 
-      // Bantuan Mekanik (M7)
+      // Panggil Montir Form, Picker, & Detail Tracking (M7)
       GoRoute(
-        path: '/help',
-        builder: (context, state) => const MyHelpRequestsScreen(),
-        routes: <RouteBase>[
-          GoRoute(
-            path: 'new',
-            builder: (context, state) => CreateHelpRequestScreen(
-              initialWorkshopId: state.uri.queryParameters['workshopId'],
-            ),
+        path: '/help/new',
+        pageBuilder: (context, state) => AppMotion.sharedAxisPage(
+          key: state.pageKey,
+          child: CreateHelpRequestScreen(
+            initialWorkshopId: state.uri.queryParameters['workshopId'],
           ),
-          GoRoute(
-            path: ':id',
-            builder: (context, state) => HelpRequestDetailScreen(
-              requestId: state.pathParameters['id'] ?? '',
-            ),
+        ),
+      ),
+      GoRoute(
+        path: '/help/picker',
+        pageBuilder: (context, state) => AppMotion.modalPage(
+          key: state.pageKey,
+          child: const LocationPickerScreen(),
+        ),
+      ),
+      GoRoute(
+        path: '/help/:id',
+        pageBuilder: (context, state) => AppMotion.sharedAxisPage(
+          key: state.pageKey,
+          child: HelpRequestDetailScreen(
+            requestId: state.pathParameters['id'] ?? '',
           ),
-        ],
+        ),
+      ),
+      GoRoute(
+        path: '/help/:id/live-tracking',
+        pageBuilder: (context, state) => AppMotion.sharedAxisPage(
+          key: state.pageKey,
+          child: LiveTrackingScreen(
+            requestId: state.pathParameters['id'] ?? '',
+          ),
+        ),
       ),
 
-      // Profil (M2)
+      // Edit Profil (M2)
       GoRoute(
-        path: '/profile',
-        builder: (context, state) => const ProfileScreen(),
-        routes: <RouteBase>[
-          GoRoute(
-            path: 'edit',
-            builder: (context, state) => const EditProfileScreen(),
-          ),
-        ],
+        path: '/profile/edit',
+        pageBuilder: (context, state) => AppMotion.sharedAxisPage(
+          key: state.pageKey,
+          child: const EditProfileScreen(),
+        ),
       ),
     ],
   );

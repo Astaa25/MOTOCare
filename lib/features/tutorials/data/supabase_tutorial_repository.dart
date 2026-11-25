@@ -15,28 +15,49 @@ class SupabaseTutorialRepository implements TutorialRepository {
     String? query,
   }) async {
     try {
-      var dbQuery = _client
-          .from('tutorials')
-          .select()
-          .eq('is_active', true);
+      // 1. Coba kueri tabel tutorials tanpa dependensi kolom is_active
+      try {
+        var dbQuery = _client.from('tutorials').select();
 
-      if (topic != null &&
-          topic.isNotEmpty &&
-          topic.toLowerCase() != TutorialTopics.all.toLowerCase()) {
-        dbQuery = dbQuery.ilike('topic', topic);
+        if (topic != null &&
+            topic.isNotEmpty &&
+            topic.toLowerCase() != TutorialTopics.all.toLowerCase()) {
+          dbQuery = dbQuery.ilike('category', topic);
+        }
+
+        if (query != null && query.trim().isNotEmpty) {
+          final clean = query.trim();
+          dbQuery = dbQuery.or('title.ilike.%$clean%,description.ilike.%$clean%');
+        }
+
+        final response = await dbQuery.order('created_at', ascending: false);
+        final List<dynamic> data = response as List<dynamic>;
+
+        return data
+            .map((json) => Tutorial.fromJson(json as Map<String, dynamic>))
+            .toList();
+      } catch (_) {
+        // 2. Fallback jika memakai kolom topic & is_active
+        var dbQuery = _client.from('tutorials').select();
+
+        if (topic != null &&
+            topic.isNotEmpty &&
+            topic.toLowerCase() != TutorialTopics.all.toLowerCase()) {
+          dbQuery = dbQuery.ilike('topic', topic);
+        }
+
+        if (query != null && query.trim().isNotEmpty) {
+          final clean = query.trim();
+          dbQuery = dbQuery.or('title.ilike.%$clean%,description.ilike.%$clean%');
+        }
+
+        final response = await dbQuery.order('created_at', ascending: false);
+        final List<dynamic> data = response as List<dynamic>;
+
+        return data
+            .map((json) => Tutorial.fromJson(json as Map<String, dynamic>))
+            .toList();
       }
-
-      if (query != null && query.trim().isNotEmpty) {
-        final clean = query.trim();
-        dbQuery = dbQuery.or('title.ilike.%$clean%,description.ilike.%$clean%');
-      }
-
-      final response = await dbQuery.order('created_at', ascending: false);
-      final List<dynamic> data = response as List<dynamic>;
-
-      return data
-          .map((json) => Tutorial.fromJson(json as Map<String, dynamic>))
-          .toList();
     } catch (_) {
       return <Tutorial>[];
     }
@@ -49,7 +70,6 @@ class SupabaseTutorialRepository implements TutorialRepository {
           .from('tutorials')
           .select()
           .eq('id', id)
-          .eq('is_active', true)
           .maybeSingle();
 
       if (response == null) return null;

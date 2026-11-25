@@ -91,7 +91,7 @@ class ServiceHistory {
       parsedCreated = DateTime.now();
     }
 
-    final dynamic rawCost = json['cost'];
+    final dynamic rawCost = json['total_cost'] ?? json['cost'];
     int parsedCost = 0;
     if (rawCost is num) {
       parsedCost = rawCost.toInt();
@@ -99,17 +99,25 @@ class ServiceHistory {
       parsedCost = int.tryParse(rawCost) ?? 0;
     }
 
+    final dynamic rawMileage = json['km_at_service'] ?? json['mileage'];
+    int parsedMileage = 0;
+    if (rawMileage is num) {
+      parsedMileage = rawMileage.toInt();
+    } else if (rawMileage is String) {
+      parsedMileage = int.tryParse(rawMileage) ?? 0;
+    }
+
     return ServiceHistory(
-      id: json['id'] as String,
-      motorcycleId: json['motorcycle_id'] as String,
-      userId: json['user_id'] as String,
+      id: (json['id'] ?? '') as String,
+      motorcycleId: (json['vehicle_id'] ?? json['motorcycle_id'] ?? '') as String,
+      userId: (json['user_id'] ?? '') as String,
       serviceDate: parsedDate,
-      mileage: json['mileage'] as int,
-      serviceType: json['service_type'] as String,
-      description: json['description'] as String?,
+      mileage: parsedMileage,
+      serviceType: (json['service_type'] ?? 'Servis Berkala') as String,
+      description: (json['work_description'] ?? json['description']) as String?,
       cost: parsedCost,
       workshopId: json['workshop_id'] as String?,
-      workshopName: json['workshop_name'] as String?,
+      workshopName: (json['custom_workshop_name'] ?? json['workshop_name']) as String?,
       createdAt: parsedCreated,
     );
   }

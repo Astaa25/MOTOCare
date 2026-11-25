@@ -1,172 +1,207 @@
 -- Migrasi 0001_schema.sql
--- Skema Database MotoCare sesuai PRD Bagian 5.1 & 5.2
+-- Skema Database Produksi MotoCare (Selaras dengan Supabase Live & Aplikasi Flutter)
 
 create extension if not exists pgcrypto;
+create extension if not exists "uuid-ossp";
 
 -- 1. ENUM TYPES
 do $$ begin
-  create type user_role as enum ('user', 'mechanic', 'admin');
+  create type user_role as enum ('owner', 'mechanic', 'admin');
 exception
   when duplicate_object then null;
 end $$;
 
 do $$ begin
-  create type reminder_status as enum ('active', 'completed');
+  create type reminder_status as enum ('AKTIF', 'SELESAI');
 exception
   when duplicate_object then null;
 end $$;
 
 do $$ begin
   create type request_status as enum (
-    'pending', 'accepted', 'rejected', 'on_the_way', 'in_progress', 'completed', 'cancelled', 'expired'
+    'MENUNGGU', 'DITERIMA', 'DALAM_PERJALANAN', 'TIBA', 'SEDANG_DITANGANI', 'SELESAI', 'DITOLAK', 'DIBATALKAN', 'KEDALUWARSA'
+  );
+exception
+  when duplicate_object then null;
+end $$;
+
+do $$ begin
+  create type tutorial_category as enum (
+    'Ganti Oli', 'Rem', 'Ban', 'Aki', 'Rantai', 'Busi'
   );
 exception
   when duplicate_object then null;
 end $$;
 
 -- 2. TABEL PROFILES (terkait auth.users)
-create table if not exists profiles (
+create table if not exists public.profiles (
   id uuid primary key references auth.users(id) on delete cascade,
-  full_name text not null check (char_length(full_name) between 2 and 80),
-  phone text check (phone ~ '^\+?[0-9]{8,15}$'),
-  role user_role not null default 'user',
+  full_name text not null,
+  email text not null unique,
+  phone_number text,
+  role user_role not null default 'owner'::user_role,
+  avatar_url text,
+  is_simulation boolean not null default false,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
 
--- 3. TABEL WORKSHOPS (Bengkel Resmi & Terverifikasi)
-create table if not exists workshops (
-  id uuid primary key default gen_random_uuid(),
-  name text not null,
-  address text not null,
-  city_or_regency text not null
-    check (city_or_regency in ('Kota Lhokseumawe', 'Kabupaten Aceh Utara')),
-  latitude double precision,
-  longitude double precision,
-  phone text,
-  opening_hours text,
-  services text[] not null default '{}',
-  is_active boolean not null default true,
-  source text not null,            -- asal data (wajib diisi untuk audit)
-  verified_at timestamptz,         -- null = belum terverifikasi (tidak boleh tampil)
-  is_demo boolean not null default false,
-  created_at timestamptz not null default now()
-);
-
--- 4. TABEL MOTORCYCLES (Kendaraan Pengguna)
-create table if not exists motorcycles (
-  id uuid primary key default gen_random_uuid(),
-  user_id uuid not null references profiles(id) on delete cascade,
+-- 3. TABEL VEHICLES (Kendaraan Pengguna)
+create table if not exists public.vehicles (
+  id uuid primary key default uuid_generate_v4(),
+  owner_id uuid not null references public.profiles(id) on delete cascade,
   brand text not null,
   model text not null,
-  production_year int not null check (production_year between 1980 and 2100),
+  production_year integer not null check (production_year >= 1970 and production_year::numeric <= (extract(year from now()) + 1::numeric)),
   license_plate text,
-  current_mileage int not null check (current_mileage between 0 and 999999),
-  mileage_updated_at timestamptz not null default now(),
+  current_km integer not null default 0 check (current_km >= 0),
+  is_simulation boolean not null default false,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
 
--- 5. TABEL SERVICE_HISTORIES (Riwayat Servis dan Biaya)
-create table if not exists service_histories (
-  id uuid primary key default gen_random_uuid(),
-  motorcycle_id uuid not null references motorcycles(id) on delete cascade,
-  user_id uuid not null references profiles(id) on delete cascade,
-  service_date date not null,
-  mileage int not null check (mileage between 0 and 999999),
-  service_type text not null,
-  description text,
-  cost numeric(12,0) not null default 0 check (cost >= 0),
-  workshop_id uuid references workshops(id) on delete set null,
-  created_at timestamptz not null default now()
-);
-
--- 6. TABEL MAINTENANCE_REMINDERS (Pengingat Servis)
-create table if not exists maintenance_reminders (
-  id uuid primary key default gen_random_uuid(),
-  motorcycle_id uuid not null references motorcycles(id) on delete cascade,
-  user_id uuid not null references profiles(id) on delete cascade,
-  title text not null,
-  reminder_date date,
-  target_mileage int check (target_mileage between 0 and 999999),
-  status reminder_status not null default 'active',
-  completed_at timestamptz,
-  created_at timestamptz not null default now(),
-  check (reminder_date is not null or target_mileage is not null)
-);
-
--- 7. TABEL MECHANICS (Mekanik Terdaftar)
-create table if not exists mechanics (
-  id uuid primary key default gen_random_uuid(),
-  profile_id uuid not null unique references profiles(id) on delete cascade,
-  workshop_id uuid references workshops(id) on delete set null,
-  is_available boolean not null default false,
-  service_area text,
-  availability_updated_at timestamptz not null default now(),
-  is_demo boolean not null default false,
-  created_at timestamptz not null default now()
-);
-
--- 8. TABEL SERVICE_REQUESTS (Permintaan Bantuan Mekanik Darurat)
-create table if not exists service_requests (
-  id uuid primary key default gen_random_uuid(),
-  user_id uuid not null references profiles(id) on delete cascade,
-  mechanic_id uuid references mechanics(id) on delete set null,
-  motorcycle_id uuid references motorcycles(id) on delete set null,
-  issue_description text not null check (char_length(issue_description) between 10 and 500),
+-- 4. TABEL MECHANICS (Mekanik Mitra Terdaftar)
+create table if not exists public.mechanics (
+  id uuid primary key default uuid_generate_v4(),
+  user_id uuid unique references public.profiles(id) on delete cascade,
+  full_name text not null,
+  phone_number text not null,
+  specialties text[] not null default '{}'::text[],
+  service_area text not null default 'Kota Lhokseumawe'::text,
   latitude double precision,
   longitude double precision,
-  address_text text not null,
-  contact_phone text not null,
-  status request_status not null default 'pending',
+  is_available boolean not null default true,
+  is_verified boolean not null default false,
+  is_simulation boolean not null default false,
+  rating_avg numeric default 0.00,
   created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
+-- 5. TABEL WORKSHOPS (Bengkel Resmi & Terverifikasi)
+create table if not exists public.workshops (
+  id uuid primary key default uuid_generate_v4(),
+  google_place_id text unique,
+  name text not null,
+  address text not null,
+  service_region text not null default 'Kota Lhokseumawe'::text,
+  latitude double precision not null,
+  longitude double precision not null,
+  phone_number text,
+  operating_hours text,
+  services_offered text[] default '{}'::text[],
+  google_rating numeric,
+  is_verified_partner boolean not null default false,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
+-- 6. TABEL ASSISTANCE_REQUESTS (Permintaan Bantuan Mekanik Darurat)
+create table if not exists public.assistance_requests (
+  id uuid primary key default uuid_generate_v4(),
+  user_id uuid not null references public.profiles(id) on delete cascade,
+  vehicle_id uuid not null references public.vehicles(id) on delete cascade,
+  mechanic_id uuid references public.mechanics(id) on delete set null,
+  issue_category text not null,
+  issue_description text not null,
+  latitude double precision not null,
+  longitude double precision not null,
+  manual_address text,
+  status request_status not null default 'MENUNGGU'::request_status,
+  estimated_cost numeric,
+  final_cost numeric,
+  rejection_reason text,
+  cancellation_reason text,
+  is_simulation boolean not null default false,
+  requested_at timestamptz not null default now(),
   accepted_at timestamptz,
   completed_at timestamptz,
-  expires_at timestamptz not null default (now() + interval '15 minutes'),
-  is_demo boolean not null default false
+  updated_at timestamptz not null default now()
 );
 
--- Mencegah duplikasi: Maksimal satu permintaan aktif per pengguna
-create unique index if not exists one_active_request_per_user on service_requests(user_id)
-  where status in ('pending', 'accepted', 'on_the_way', 'in_progress');
-
--- 9. TABEL TUTORIALS (Edukasi Perawatan Motor Mandiri)
-create table if not exists tutorials (
-  id uuid primary key default gen_random_uuid(),
-  title text not null,
-  topic text not null,
-  youtube_url text not null
-    check (youtube_url ~ '^https://(www\.)?(youtube\.com|youtu\.be)/'),
-  thumbnail_url text,
-  description text,
-  is_active boolean not null default true,
-  created_at timestamptz not null default now()
+-- 7. TABEL SERVICE_HISTORIES (Riwayat Servis dan Biaya)
+create table if not exists public.service_histories (
+  id uuid primary key default uuid_generate_v4(),
+  vehicle_id uuid not null references public.vehicles(id) on delete cascade,
+  workshop_id uuid references public.workshops(id) on delete set null,
+  custom_workshop_name text,
+  service_date date not null default current_date,
+  km_at_service integer not null check (km_at_service >= 0),
+  service_type text not null,
+  replaced_parts text[] default '{}'::text[],
+  work_description text,
+  labor_cost numeric not null default 0,
+  parts_cost numeric not null default 0,
+  total_cost numeric default (labor_cost + parts_cost),
+  is_simulation boolean not null default false,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
 );
 
--- 10. TABEL NOTIFICATIONS (Pusat Notifikasi In-App)
-create table if not exists notifications (
-  id uuid primary key default gen_random_uuid(),
-  user_id uuid not null references profiles(id) on delete cascade,
+-- 8. TABEL SERVICE_REMINDERS (Pengingat Servis)
+create table if not exists public.service_reminders (
+  id uuid primary key default uuid_generate_v4(),
+  vehicle_id uuid not null references public.vehicles(id) on delete cascade,
+  service_type text not null,
+  target_date date,
+  target_km integer check (target_km >= 0),
+  status reminder_status not null default 'AKTIF'::reminder_status,
+  notes text,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now(),
+  check (target_date is not null or target_km is not null)
+);
+
+-- 9. TABEL NOTIFICATIONS (Pusat Notifikasi In-App)
+create table if not exists public.notifications (
+  id uuid primary key default uuid_generate_v4(),
+  user_id uuid not null references public.profiles(id) on delete cascade,
+  reminder_id uuid references public.service_reminders(id) on delete cascade,
+  request_id uuid references public.assistance_requests(id) on delete cascade,
   title text not null,
-  body text not null,
-  type text not null check (type in ('reminder', 'request_status', 'system')),
+  message text not null,
+  notification_type text not null default 'SYSTEM'::text,
   is_read boolean not null default false,
-  related_id uuid,
   created_at timestamptz not null default now()
 );
 
--- 11. INDEXES UNTUK PERFORMA
-create index if not exists idx_motorcycles_user_id on motorcycles(user_id);
-create index if not exists idx_service_histories_motorcycle_id on service_histories(motorcycle_id);
-create index if not exists idx_service_histories_user_id on service_histories(user_id);
-create index if not exists idx_reminders_motorcycle_id on maintenance_reminders(motorcycle_id);
-create index if not exists idx_reminders_user_id on maintenance_reminders(user_id);
-create index if not exists idx_workshops_city_active on workshops(city_or_regency, is_active);
-create index if not exists idx_service_requests_user_status on service_requests(user_id, status);
-create index if not exists idx_notifications_user_unread on notifications(user_id, is_read);
+-- 10. TABEL TUTORIALS (Edukasi Perawatan Motor Mandiri)
+create table if not exists public.tutorials (
+  id uuid primary key default uuid_generate_v4(),
+  title text not null,
+  category tutorial_category not null,
+  keywords text[] not null default '{}'::text[],
+  description text not null,
+  youtube_url text not null,
+  youtube_video_id text not null,
+  has_safety_warning boolean not null default false,
+  safety_warning_text text,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
 
--- 12. TRIGGERS
--- Trigger otomatis membuat profile baru saat auth.users dibuat
+-- 11. TABEL REVIEWS (Ulasan & Penilaian Pelanggan)
+create table if not exists public.reviews (
+  id uuid primary key default uuid_generate_v4(),
+  user_id uuid not null references public.profiles(id) on delete cascade,
+  request_id uuid unique references public.assistance_requests(id) on delete cascade,
+  mechanic_id uuid references public.mechanics(id) on delete set null,
+  workshop_id uuid references public.workshops(id) on delete set null,
+  rating integer not null check (rating >= 1 and rating <= 5),
+  comment text,
+  is_simulation boolean not null default false,
+  created_at timestamptz not null default now()
+);
+
+-- 12. INDEXES UNTUK PERFORMA
+create index if not exists idx_vehicles_owner_id on public.vehicles(owner_id);
+create index if not exists idx_service_histories_vehicle_id on public.service_histories(vehicle_id);
+create index if not exists idx_service_reminders_vehicle_id on public.service_reminders(vehicle_id);
+create index if not exists idx_workshops_region_partner on public.workshops(service_region, is_verified_partner);
+create index if not exists idx_assistance_requests_user_status on public.assistance_requests(user_id, status);
+create index if not exists idx_notifications_user_unread on public.notifications(user_id, is_read);
+
+-- 13. TRIGGERS
 create or replace function public.handle_new_user()
 returns trigger
 language plpgsql
@@ -174,12 +209,16 @@ security definer
 set search_path = public
 as $$
 begin
-  insert into public.profiles (id, full_name, role)
+  insert into public.profiles (id, full_name, email, role)
   values (
     new.id,
-    coalesce(new.raw_user_meta_data->>'full_name', 'Pengguna'),
-    'user'
-  );
+    coalesce(new.raw_user_meta_data->>'full_name', split_part(new.email, '@', 1)),
+    new.email,
+    coalesce((new.raw_user_meta_data->>'role')::user_role, 'owner'::user_role)
+  )
+  on conflict (id) do update set
+    full_name = excluded.full_name,
+    email = excluded.email;
   return new;
 end;
 $$;
@@ -189,66 +228,7 @@ create trigger on_auth_user_created
   after insert on auth.users
   for each row execute function public.handle_new_user();
 
--- Trigger menolak service_date di masa depan
-create or replace function public.check_future_service_date()
-returns trigger
-language plpgsql
-as $$
-begin
-  if new.service_date > current_date then
-    raise exception 'Tanggal servis tidak boleh di masa depan (service_date: %)', new.service_date;
-  end if;
-  return new;
-end;
-$$;
-
-drop trigger if exists trg_check_future_service_date on service_histories;
-create trigger trg_check_future_service_date
-  before insert or update on service_histories
-  for each row execute function public.check_future_service_date();
-
--- Trigger otomatis membuat notifikasi in-app saat status bantuan mekanik berubah
-create or replace function public.notify_on_request_status_change()
-returns trigger
-language plpgsql
-security definer
-set search_path = public
-as $$
-declare
-  status_label text;
-begin
-  if old.status is distinct from new.status then
-    status_label := case new.status
-      when 'accepted' then 'Permintaan bantuan Anda telah diterima oleh mekanik.'
-      when 'on_the_way' then 'Mekanik sedang dalam perjalanan menuju lokasi Anda.'
-      when 'in_progress' then 'Mekanik sedang menangani masalah motor Anda.'
-      when 'completed' then 'Bantuan mekanik telah selesai.'
-      when 'cancelled' then 'Permintaan bantuan telah dibatalkan.'
-      when 'expired' then 'Permintaan bantuan kedaluwarsa karena tidak ada respon.'
-      when 'rejected' then 'Mekanik tidak dapat menerima permintaan saat ini.'
-      else 'Status bantuan diperbarui: ' || new.status
-    end;
-
-    insert into public.notifications (user_id, title, body, type, related_id)
-    values (
-      new.user_id,
-      'Status Bantuan Mekanik',
-      status_label,
-      'request_status',
-      new.id
-    );
-  end if;
-  return new;
-end;
-$$;
-
-drop trigger if exists trg_notify_on_request_status_change on service_requests;
-create trigger trg_notify_on_request_status_change
-  after update of status on service_requests
-  for each row execute function public.notify_on_request_status_change();
-
--- Trigger timestamp updated_at
-create or replace function public.update_updated_at_column()
+create or replace function public.set_updated_at()
 returns trigger
 language plpgsql
 as $$
@@ -258,12 +238,12 @@ begin
 end;
 $$;
 
-drop trigger if exists trg_profiles_updated_at on profiles;
+drop trigger if exists trg_profiles_updated_at on public.profiles;
 create trigger trg_profiles_updated_at
-  before update on profiles
-  for each row execute function public.update_updated_at_column();
+  before update on public.profiles
+  for each row execute function public.set_updated_at();
 
-drop trigger if exists trg_motorcycles_updated_at on motorcycles;
-create trigger trg_motorcycles_updated_at
-  before update on motorcycles
-  for each row execute function public.update_updated_at_column();
+drop trigger if exists trg_vehicles_updated_at on public.vehicles;
+create trigger trg_vehicles_updated_at
+  before update on public.vehicles
+  for each row execute function public.set_updated_at();

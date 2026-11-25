@@ -235,8 +235,8 @@ void main() {
 
       await tester.pumpAndSettle();
 
-      // Cek list notifikasi muncul
-      expect(find.text('Pusat Notifikasi'), findsOneWidget);
+      // Cek list notifikasi muncul (Figma 06.03)
+      expect(find.text('Notifikasi'), findsOneWidget);
       expect(find.byKey(const Key('mark_all_read_button')), findsOneWidget);
 
       // Tekan tandai semua dibaca

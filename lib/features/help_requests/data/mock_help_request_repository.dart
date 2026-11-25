@@ -1,4 +1,5 @@
 import 'dart:async';
+import '../../../core/config/env.dart';
 import '../../../core/errors/app_exception.dart';
 import '../domain/help_request_repository.dart';
 import '../domain/help_request_rules.dart';
@@ -94,7 +95,7 @@ class MockHelpRequestRepository implements HelpRequestRepository {
       status: RequestStatus.pending,
       createdAt: DateTime.now(),
       expiresAt: DateTime.now().add(const Duration(minutes: 15)),
-      isDemo: true,
+      isDemo: AppEnv.showDemoFeatures && request.isDemo,
     );
 
     _requests.insert(0, newReq);

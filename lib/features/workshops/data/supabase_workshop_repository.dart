@@ -15,32 +15,54 @@ class SupabaseWorkshopRepository implements WorkshopRepository {
     String? cityOrRegency,
     int page = 1,
     int limit = 20,
+    double? latitude,
+    double? longitude,
   }) async {
     try {
-      var dbQuery = _client.from('workshops').select();
-
-      if (cityOrRegency != null &&
-          cityOrRegency.isNotEmpty &&
-          cityOrRegency.toLowerCase() != 'semua') {
-        dbQuery = dbQuery.eq('city_or_regency', cityOrRegency);
-      }
-
-      if (query != null && query.trim().isNotEmpty) {
-        final clean = query.trim();
-        dbQuery = dbQuery.or('name.ilike.%$clean%,address.ilike.%$clean%');
-      }
-
       final from = (page - 1) * limit;
       final to = from + limit - 1;
 
-      final response = await dbQuery
-          .order('name', ascending: true)
-          .range(from, to);
+      // 1. Coba dengan kolom service_region (skema Supabase live)
+      try {
+        var dbQuery = _client.from('workshops').select();
+        if (cityOrRegency != null &&
+            cityOrRegency.isNotEmpty &&
+            cityOrRegency.toLowerCase() != 'semua') {
+          dbQuery = dbQuery.eq('service_region', cityOrRegency);
+        }
+        if (query != null && query.trim().isNotEmpty) {
+          final clean = query.trim();
+          dbQuery = dbQuery.or('name.ilike.%$clean%,address.ilike.%$clean%');
+        }
+        final response = await dbQuery
+            .order('name', ascending: true)
+            .range(from, to);
 
-      final List<dynamic> data = response as List<dynamic>;
-      return data
-          .map((json) => Workshop.fromJson(json as Map<String, dynamic>))
-          .toList();
+        final List<dynamic> data = response as List<dynamic>;
+        return data
+            .map((json) => Workshop.fromJson(json as Map<String, dynamic>))
+            .toList();
+      } catch (_) {
+        // 2. Fallback dengan kolom city_or_regency (skema lama)
+        var dbQuery = _client.from('workshops').select();
+        if (cityOrRegency != null &&
+            cityOrRegency.isNotEmpty &&
+            cityOrRegency.toLowerCase() != 'semua') {
+          dbQuery = dbQuery.eq('city_or_regency', cityOrRegency);
+        }
+        if (query != null && query.trim().isNotEmpty) {
+          final clean = query.trim();
+          dbQuery = dbQuery.or('name.ilike.%$clean%,address.ilike.%$clean%');
+        }
+        final response = await dbQuery
+            .order('name', ascending: true)
+            .range(from, to);
+
+        final List<dynamic> data = response as List<dynamic>;
+        return data
+            .map((json) => Workshop.fromJson(json as Map<String, dynamic>))
+            .toList();
+      }
     } catch (_) {
       return <Workshop>[];
     }

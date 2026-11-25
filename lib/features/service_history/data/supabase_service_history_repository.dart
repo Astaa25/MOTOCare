@@ -19,18 +19,34 @@ class SupabaseServiceHistoryRepository implements ServiceHistoryRepository {
     int offset = 0,
   }) async {
     try {
-      dynamic query = _client
-          .from('service_histories')
-          .select()
-          .eq('motorcycle_id', motorcycleId);
+      List<Map<String, dynamic>> response;
+      try {
+        dynamic query = _client
+            .from('service_histories')
+            .select()
+            .eq('vehicle_id', motorcycleId);
 
-      if (serviceType != null && serviceType.trim().isNotEmpty && serviceType != 'Semua') {
-        query = query.eq('service_type', serviceType.trim());
+        if (serviceType != null && serviceType.trim().isNotEmpty && serviceType != 'Semua') {
+          query = query.eq('service_type', serviceType.trim());
+        }
+
+        response = await query
+            .order('service_date', ascending: false)
+            .range(offset, offset + limit - 1);
+      } catch (_) {
+        dynamic query = _client
+            .from('service_histories')
+            .select()
+            .eq('motorcycle_id', motorcycleId);
+
+        if (serviceType != null && serviceType.trim().isNotEmpty && serviceType != 'Semua') {
+          query = query.eq('service_type', serviceType.trim());
+        }
+
+        response = await query
+            .order('service_date', ascending: false)
+            .range(offset, offset + limit - 1);
       }
-
-      final List<Map<String, dynamic>> response = await query
-          .order('service_date', ascending: false)
-          .range(offset, offset + limit - 1);
 
       final list = response.map(ServiceHistory.fromJson).toList();
       return Result.success(list);
@@ -67,40 +83,75 @@ class SupabaseServiceHistoryRepository implements ServiceHistoryRepository {
     String? workshopName,
   }) async {
     try {
-      final payload = <String, dynamic>{
-        'motorcycle_id': motorcycleId,
-        'user_id': userId,
-        'service_date': serviceDate.toIso8601String().split('T').first,
-        'mileage': mileage,
-        'service_type': serviceType.trim(),
-        'description': description?.trim(),
-        'cost': cost,
-        'workshop_id': workshopId,
-        'workshop_name': workshopName?.trim(),
-      };
+      Map<String, dynamic> response;
+      try {
+        response = await _client
+            .from('service_histories')
+            .insert(<String, dynamic>{
+              'vehicle_id': motorcycleId,
+              'service_date': serviceDate.toIso8601String().split('T').first,
+              'km_at_service': mileage,
+              'service_type': serviceType.trim(),
+              'work_description': description?.trim(),
+              'labor_cost': cost,
+              'parts_cost': 0,
+              'total_cost': cost,
+              'workshop_id': workshopId,
+              'custom_workshop_name': workshopName?.trim(),
+              'is_simulation': false,
+            })
+            .select()
+            .single();
+      } catch (_) {
+        final payload = <String, dynamic>{
+          'motorcycle_id': motorcycleId,
+          'user_id': userId,
+          'service_date': serviceDate.toIso8601String().split('T').first,
+          'mileage': mileage,
+          'service_type': serviceType.trim(),
+          'description': description?.trim(),
+          'cost': cost,
+          'workshop_id': workshopId,
+          'workshop_name': workshopName?.trim(),
+        };
 
-      final response = await _client
-          .from('service_histories')
-          .insert(payload)
-          .select()
-          .single();
+        response = await _client
+            .from('service_histories')
+            .insert(payload)
+            .select()
+            .single();
+      }
 
       final newService = ServiceHistory.fromJson(response);
 
       // Aturan bisnis PRD 7 M4: Perbarui kilometer motor bila kilometer servis lebih besar
       try {
-        final motorData = await _client
-            .from('motorcycles')
-            .select('current_mileage')
-            .eq('id', motorcycleId)
-            .single();
+        try {
+          final motorData = await _client
+              .from('vehicles')
+              .select('current_km')
+              .eq('id', motorcycleId)
+              .single();
+          final currentKm = motorData['current_km'] as int? ?? 0;
+          if (mileage > currentKm) {
+            await _client.from('vehicles').update(<String, dynamic>{
+              'current_km': mileage,
+            }).eq('id', motorcycleId);
+          }
+        } catch (_) {
+          final motorData = await _client
+              .from('motorcycles')
+              .select('current_mileage')
+              .eq('id', motorcycleId)
+              .single();
 
-        final currentKm = motorData['current_mileage'] as int? ?? 0;
-        if (mileage > currentKm) {
-          await _client.from('motorcycles').update(<String, dynamic>{
-            'current_mileage': mileage,
-            'mileage_updated_at': DateTime.now().toIso8601String(),
-          }).eq('id', motorcycleId);
+          final currentKm = motorData['current_mileage'] as int? ?? 0;
+          if (mileage > currentKm) {
+            await _client.from('motorcycles').update(<String, dynamic>{
+              'current_mileage': mileage,
+              'mileage_updated_at': DateTime.now().toIso8601String(),
+            }).eq('id', motorcycleId);
+          }
         }
       } catch (_) {
         // Abaikan kegagalan secondary update jika ada

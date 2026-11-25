@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import '../config/env.dart';
 import '../theme/app_colors.dart';
+import 'animated_effects.dart';
 import 'status_chip.dart';
 
 /// Kartu bengkel terverifikasi MotoCare sesuai PRD 4.3 & M6
@@ -33,24 +35,12 @@ class WorkshopCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return InkWell(
+    return InteractiveHoverCard(
       onTap: onTap,
-      borderRadius: BorderRadius.circular(16),
-      child: Container(
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: AppColors.background,
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: AppColors.border),
-          boxShadow: <BoxShadow>[
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.03),
-              blurRadius: 8,
-              offset: const Offset(0, 3),
-            ),
-          ],
-        ),
-        child: Column(
+      borderRadius: BorderRadius.circular(18),
+      backgroundColor: AppColors.surfaceBright,
+      padding: const EdgeInsets.all(16),
+      child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: <Widget>[
             // Nama bengkel dan badge terverifikasi / demo
@@ -81,7 +71,7 @@ class WorkshopCard extends StatelessWidget {
                     ],
                   ),
                 ),
-                if (isDemo)
+                if (AppEnv.showDemoFeatures && isDemo)
                   StatusChip.demo()
                 else
                   Container(
@@ -248,7 +238,6 @@ class WorkshopCard extends StatelessWidget {
             ],
           ],
         ),
-      ),
     );
   }
 }

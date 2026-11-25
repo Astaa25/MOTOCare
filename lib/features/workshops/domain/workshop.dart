@@ -25,6 +25,8 @@ class Workshop {
   final double? longitude;
   final String? phone;
   final String? openingHours;
+  final double? rating;
+  final bool? openNow;
   final List<String> services;
   final bool isActive;
   final String source;
@@ -41,6 +43,8 @@ class Workshop {
     this.longitude,
     this.phone,
     this.openingHours,
+    this.rating,
+    this.openNow,
     this.services = const <String>[],
     this.isActive = true,
     required this.source,
@@ -53,24 +57,29 @@ class Workshop {
   bool get isVerified => verifiedAt != null || isDemo;
 
   factory Workshop.fromJson(Map<String, dynamic> json) {
+    final servicesRaw = json['services_offered'] ?? json['services'];
     return Workshop(
-      id: json['id'] as String,
-      name: json['name'] as String,
-      address: json['address'] as String,
-      cityOrRegency: json['city_or_regency'] as String,
+      id: (json['id'] ?? '') as String,
+      name: (json['name'] ?? '') as String,
+      address: (json['address'] ?? '') as String,
+      cityOrRegency: (json['service_region'] ?? json['city_or_regency'] ?? 'Kota Lhokseumawe') as String,
       latitude: (json['latitude'] as num?)?.toDouble(),
       longitude: (json['longitude'] as num?)?.toDouble(),
-      phone: json['phone'] as String?,
-      openingHours: json['opening_hours'] as String?,
-      services: json['services'] != null
-          ? List<String>.from(json['services'] as List<dynamic>)
+      phone: (json['phone_number'] ?? json['phone']) as String?,
+      openingHours: (json['operating_hours'] ?? json['opening_hours']) as String?,
+      rating: ((json['google_rating'] ?? json['rating']) as num?)?.toDouble(),
+      openNow: json['open_now'] as bool?,
+      services: servicesRaw != null
+          ? List<String>.from(servicesRaw as List<dynamic>)
           : const <String>[],
       isActive: (json['is_active'] as bool?) ?? true,
       source: (json['source'] as String?) ?? 'Data Resmi',
-      verifiedAt: json['verified_at'] != null
-          ? DateTime.parse(json['verified_at'] as String)
-          : null,
-      isDemo: (json['is_demo'] as bool?) ?? false,
+      verifiedAt: json['is_verified_partner'] == true
+          ? DateTime.now()
+          : (json['verified_at'] != null
+              ? DateTime.parse(json['verified_at'] as String)
+              : null),
+      isDemo: (json['is_simulation'] ?? json['is_demo'] ?? false) as bool,
       createdAt: json['created_at'] != null
           ? DateTime.parse(json['created_at'] as String)
           : DateTime.now(),
@@ -87,6 +96,8 @@ class Workshop {
       'longitude': longitude,
       'phone': phone,
       'opening_hours': openingHours,
+      'rating': rating,
+      'open_now': openNow,
       'services': services,
       'is_active': isActive,
       'source': source,
@@ -105,6 +116,8 @@ class Workshop {
     double? longitude,
     String? phone,
     String? openingHours,
+    double? rating,
+    bool? openNow,
     List<String>? services,
     bool? isActive,
     String? source,
@@ -121,6 +134,8 @@ class Workshop {
       longitude: longitude ?? this.longitude,
       phone: phone ?? this.phone,
       openingHours: openingHours ?? this.openingHours,
+      rating: rating ?? this.rating,
+      openNow: openNow ?? this.openNow,
       services: services ?? this.services,
       isActive: isActive ?? this.isActive,
       source: source ?? this.source,

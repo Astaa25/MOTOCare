@@ -86,13 +86,14 @@ class AppNotification {
 
   factory AppNotification.fromJson(Map<String, dynamic> json) {
     return AppNotification(
-      id: json['id'] as String,
+      id: (json['id'] ?? '') as String,
       userId: (json['user_id'] ?? '') as String,
       title: (json['title'] ?? '') as String,
-      body: (json['body'] ?? '') as String,
-      type: NotificationType.fromString((json['type'] ?? 'system') as String),
+      body: (json['message'] ?? json['body'] ?? '') as String,
+      type: NotificationType.fromString(
+          (json['notification_type'] ?? json['type'] ?? 'system') as String),
       isRead: (json['is_read'] ?? false) as bool,
-      relatedId: json['related_id'] as String?,
+      relatedId: (json['request_id'] ?? json['reminder_id'] ?? json['related_id']) as String?,
       createdAt: json['created_at'] != null
           ? DateTime.parse(json['created_at'] as String)
           : DateTime.now(),

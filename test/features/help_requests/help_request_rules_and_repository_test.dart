@@ -204,7 +204,7 @@ void main() {
 
       expect(created.id, isNotEmpty);
       expect(created.status, RequestStatus.pending);
-      expect(created.isDemo, isTrue);
+      expect(created.isDemo, isFalse);
       expect(created.expiresAt.isAfter(DateTime.now()), isTrue);
 
       final fetched = await repository.getRequestById(created.id);

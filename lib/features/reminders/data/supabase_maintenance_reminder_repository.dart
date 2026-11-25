@@ -7,6 +7,7 @@ import '../domain/maintenance_reminder_repository.dart';
 import '../domain/reminder_rules.dart';
 
 /// Implementasi Supabase PostgreSQL untuk MaintenanceReminderRepository
+/// Mendukung tabel `service_reminders` (live Supabase) dan fallback ke `maintenance_reminders`
 class SupabaseMaintenanceReminderRepository implements MaintenanceReminderRepository {
   final SupabaseClient _client;
 
@@ -18,13 +19,22 @@ class SupabaseMaintenanceReminderRepository implements MaintenanceReminderReposi
     String motorcycleId,
   ) async {
     try {
-      final response = await _client
-          .from('maintenance_reminders')
-          .select()
-          .eq('motorcycle_id', motorcycleId)
-          .order('created_at', ascending: false);
+      List<dynamic> response;
+      try {
+        response = await _client
+            .from('service_reminders')
+            .select()
+            .eq('vehicle_id', motorcycleId)
+            .order('created_at', ascending: false);
+      } catch (_) {
+        response = await _client
+            .from('maintenance_reminders')
+            .select()
+            .eq('motorcycle_id', motorcycleId)
+            .order('created_at', ascending: false);
+      }
 
-      final List<MaintenanceReminder> list = (response as List<dynamic>)
+      final List<MaintenanceReminder> list = response
           .map((json) => MaintenanceReminder.fromJson(json as Map<String, dynamic>))
           .toList();
 
@@ -39,11 +49,20 @@ class SupabaseMaintenanceReminderRepository implements MaintenanceReminderReposi
   @override
   Future<Result<MaintenanceReminder>> getReminderById(String id) async {
     try {
-      final response = await _client
-          .from('maintenance_reminders')
-          .select()
-          .eq('id', id)
-          .maybeSingle();
+      Map<String, dynamic>? response;
+      try {
+        response = await _client
+            .from('service_reminders')
+            .select()
+            .eq('id', id)
+            .maybeSingle();
+      } catch (_) {
+        response = await _client
+            .from('maintenance_reminders')
+            .select()
+            .eq('id', id)
+            .maybeSingle();
+      }
 
       if (response == null) {
         return const Result<MaintenanceReminder>.failure(
@@ -73,23 +92,43 @@ class SupabaseMaintenanceReminderRepository implements MaintenanceReminderReposi
         );
       }
 
-      final payload = <String, dynamic>{
-        'motorcycle_id': reminder.motorcycleId,
-        'user_id': user.id,
-        'title': reminder.title,
-        if (reminder.reminderDate != null)
-          'reminder_date':
-              '${reminder.reminderDate!.year.toString().padLeft(4, '0')}-${reminder.reminderDate!.month.toString().padLeft(2, '0')}-${reminder.reminderDate!.day.toString().padLeft(2, '0')}',
-        if (reminder.targetMileage != null)
-          'target_mileage': reminder.targetMileage,
-        'status': reminder.status.dbValue,
-      };
+      Map<String, dynamic> response;
+      try {
+        final dateStr = reminder.reminderDate != null
+            ? '${reminder.reminderDate!.year.toString().padLeft(4, '0')}-${reminder.reminderDate!.month.toString().padLeft(2, '0')}-${reminder.reminderDate!.day.toString().padLeft(2, '0')}'
+            : null;
 
-      final response = await _client
-          .from('maintenance_reminders')
-          .insert(payload)
-          .select()
-          .single();
+        response = await _client
+            .from('service_reminders')
+            .insert(<String, dynamic>{
+              'vehicle_id': reminder.motorcycleId,
+              'service_type': reminder.serviceType ?? reminder.title,
+              'target_date': ?dateStr,
+              'target_km': ?reminder.targetMileage,
+              'status': reminder.status.dbValue,
+              'notes': reminder.title,
+            })
+            .select()
+            .single();
+      } catch (_) {
+        final payload = <String, dynamic>{
+          'motorcycle_id': reminder.motorcycleId,
+          'user_id': user.id,
+          'title': reminder.title,
+          if (reminder.reminderDate != null)
+            'reminder_date':
+                '${reminder.reminderDate!.year.toString().padLeft(4, '0')}-${reminder.reminderDate!.month.toString().padLeft(2, '0')}-${reminder.reminderDate!.day.toString().padLeft(2, '0')}',
+          if (reminder.targetMileage != null)
+            'target_mileage': reminder.targetMileage,
+          'status': reminder.status.dbValue,
+        };
+
+        response = await _client
+            .from('maintenance_reminders')
+            .insert(payload)
+            .select()
+            .single();
+      }
 
       return Result<MaintenanceReminder>.success(
         MaintenanceReminder.fromJson(response),
@@ -106,23 +145,43 @@ class SupabaseMaintenanceReminderRepository implements MaintenanceReminderReposi
     MaintenanceReminder reminder,
   ) async {
     try {
-      final payload = <String, dynamic>{
-        'title': reminder.title,
-        'reminder_date': reminder.reminderDate != null
+      Map<String, dynamic> response;
+      try {
+        final dateStr = reminder.reminderDate != null
             ? '${reminder.reminderDate!.year.toString().padLeft(4, '0')}-${reminder.reminderDate!.month.toString().padLeft(2, '0')}-${reminder.reminderDate!.day.toString().padLeft(2, '0')}'
-            : null,
-        'target_mileage': reminder.targetMileage,
-        'status': reminder.status.dbValue,
-        if (reminder.completedAt != null)
-          'completed_at': reminder.completedAt!.toIso8601String(),
-      };
+            : null;
 
-      final response = await _client
-          .from('maintenance_reminders')
-          .update(payload)
-          .eq('id', reminder.id)
-          .select()
-          .single();
+        response = await _client
+            .from('service_reminders')
+            .update(<String, dynamic>{
+              'service_type': reminder.serviceType ?? reminder.title,
+              'target_date': dateStr,
+              'target_km': reminder.targetMileage,
+              'status': reminder.status.dbValue,
+              'notes': reminder.title,
+            })
+            .eq('id', reminder.id)
+            .select()
+            .single();
+      } catch (_) {
+        final payload = <String, dynamic>{
+          'title': reminder.title,
+          'reminder_date': reminder.reminderDate != null
+              ? '${reminder.reminderDate!.year.toString().padLeft(4, '0')}-${reminder.reminderDate!.month.toString().padLeft(2, '0')}-${reminder.reminderDate!.day.toString().padLeft(2, '0')}'
+              : null,
+          'target_mileage': reminder.targetMileage,
+          'status': reminder.status.dbValue,
+          if (reminder.completedAt != null)
+            'completed_at': reminder.completedAt!.toIso8601String(),
+        };
+
+        response = await _client
+            .from('maintenance_reminders')
+            .update(payload)
+            .eq('id', reminder.id)
+            .select()
+            .single();
+      }
 
       return Result<MaintenanceReminder>.success(
         MaintenanceReminder.fromJson(response),
@@ -137,7 +196,11 @@ class SupabaseMaintenanceReminderRepository implements MaintenanceReminderReposi
   @override
   Future<Result<void>> deleteReminder(String id) async {
     try {
-      await _client.from('maintenance_reminders').delete().eq('id', id);
+      try {
+        await _client.from('service_reminders').delete().eq('id', id);
+      } catch (_) {
+        await _client.from('maintenance_reminders').delete().eq('id', id);
+      }
       return const Result<void>.success(null);
     } catch (e) {
       return Result<void>.failure(
@@ -161,15 +224,27 @@ class SupabaseMaintenanceReminderRepository implements MaintenanceReminderReposi
       final MaintenanceReminder current = getRes.dataOrNull!;
       final DateTime now = DateTime.now();
 
-      final updateRes = await _client
-          .from('maintenance_reminders')
-          .update(<String, dynamic>{
-            'status': 'completed',
-            'completed_at': now.toIso8601String(),
-          })
-          .eq('id', id)
-          .select()
-          .single();
+      Map<String, dynamic> updateRes;
+      try {
+        updateRes = await _client
+            .from('service_reminders')
+            .update(<String, dynamic>{
+              'status': 'SELESAI',
+            })
+            .eq('id', id)
+            .select()
+            .single();
+      } catch (_) {
+        updateRes = await _client
+            .from('maintenance_reminders')
+            .update(<String, dynamic>{
+              'status': 'completed',
+              'completed_at': now.toIso8601String(),
+            })
+            .eq('id', id)
+            .select()
+            .single();
+      }
 
       final MaintenanceReminder completed =
           MaintenanceReminder.fromJson(updateRes);
@@ -195,11 +270,20 @@ class SupabaseMaintenanceReminderRepository implements MaintenanceReminderReposi
 
   @override
   Stream<List<MaintenanceReminder>> watchReminders(String motorcycleId) {
-    return _client
-        .from('maintenance_reminders')
-        .stream(primaryKey: <String>['id'])
-        .eq('motorcycle_id', motorcycleId)
-        .order('created_at', ascending: false)
-        .map((records) => records.map(MaintenanceReminder.fromJson).toList());
+    try {
+      return _client
+          .from('service_reminders')
+          .stream(primaryKey: <String>['id'])
+          .eq('vehicle_id', motorcycleId)
+          .order('created_at', ascending: false)
+          .map((records) => records.map(MaintenanceReminder.fromJson).toList());
+    } catch (_) {
+      return _client
+          .from('maintenance_reminders')
+          .stream(primaryKey: <String>['id'])
+          .eq('motorcycle_id', motorcycleId)
+          .order('created_at', ascending: false)
+          .map((records) => records.map(MaintenanceReminder.fromJson).toList());
+    }
   }
 }

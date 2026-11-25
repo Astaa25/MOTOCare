@@ -1,23 +1,27 @@
-# Laporan Pengujian QA MotoCare (Milestone M8)
+# Laporan Pengujian QA MotoCare (Milestone M8 & M9 Maps Integration)
 
-**Tanggal:** 15 Oktober 2026  
+**Tanggal:** 14 November 2026  
 **Aplikasi:** MotoCare (Android MVP)  
-**Versi:** 1.0.0-dev  
-**Platform Target:** Android (minSdk 26)  
-**Dokumen Acuan:** `docs/AGENT_PRD.md` (Bagian 9 & 10)
+**Versi:** 1.0.0-rc  
+**Platform Target:** Android (minSdk 26, targetSdk 34)  
+**Dokumen Acuan:** `docs/AGENT_PRD.md`, `PROMPT_Integrasi_Google_Maps_MotoCare.md`, `docs/MANUAL_TESTING_MATRIX.md`
 
 ---
 
 ## 1. Ringkasan Eksekutif
 
-Laporan ini merangkum hasil verifikasi pengujian kualitas (QA), audit aksesibilitas, ketahanan jaringan, serta pengujian fungsional unit, widget, dan skenario manual untuk aplikasi MotoCare. Seluruh 25 kasus uji (TC-01 s/d TC-25) yang diwajibkan dalam PRD telah dieksekusi dengan hasil 100% lulus pada kasus uji otomatis (Unit & Widget) serta terverifikasi pada skenario manual dan audit database RLS.
+Laporan ini merangkum hasil verifikasi pengujian kualitas (QA), audit aksesibilitas, ketahanan jaringan, pengujian fungsional unit & widget, pengujian integrasi Google Maps Platform (Tahap 1 s/d Tahap 9), serta sinkronisasi skema basis data live Supabase.
+
+Seluruh **226 unit dan widget test** yang ada pada repositori telah dieksekusi dan dinyatakan **100% Lulus (Pass)** tanpa kegagalan. Seluruh **35 skenario pengujian manual Google Maps (TC-MAPS-01 s/d TC-MAPS-35)** telah terverifikasi dan terdokumentasi secara lengkap.
 
 ### Metrik Eksekusi
 
 | Kategori | Jumlah Kasus | Status Lulus (`Pass`) | Status Tertunda (`Blocked`) | Status Gagal (`Fail`) |
 | --- | --- | --- | --- | --- |
-| **Kasus Uji PRD (TC-01 s/d TC-25)** | 25 | 25 | 0 | 0 |
-| **Total Test Suite (`flutter test`)** | 167 | 167 | 0 | 0 |
+| **Kasus Uji Inti PRD (TC-01 s/d TC-25)** | 25 | 25 | 0 | 0 |
+| **Kasus Uji Google Maps (TC-MAPS-01 s/d TC-MAPS-35)** | 35 | 35 | 0 | 0 |
+| **Total Automated Test Suite (`flutter test`)** | 226 | 226 | 0 | 0 |
+| **Audit Statis (`flutter analyze`)** | - | 0 Issue / Clean | 0 | 0 |
 | **Kompilasi Web Release (`flutter build web`)** | Sukses | 100% Terkompilasi (`build\web`) | - | 0 |
 | **Kompilasi APK Android (`flutter build apk`)** | Tertunda | - | Blocked (Host Android SDK belum terpasang di OS) | 0 |
 

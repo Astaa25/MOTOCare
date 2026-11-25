@@ -1,15 +1,21 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:geolocator/geolocator.dart';
 import 'package:go_router/go_router.dart';
+import '../../../core/config/env.dart';
+import '../../../core/services/maps_cost_controller.dart';
+import '../../../core/services/user_location_service.dart';
 import '../../../core/theme/app_colors.dart';
-import '../../../core/widgets/app_dialogs.dart';
+import '../../../core/widgets/animated_loading.dart';
+import '../../../core/widgets/app_background.dart';
 import '../../../core/widgets/primary_button.dart';
 import '../../auth/presentation/auth_state_provider.dart';
 import '../../motorcycles/presentation/motorcycle_providers.dart';
 import '../domain/help_request_rules.dart';
 import '../domain/service_request.dart';
 import 'help_requests_providers.dart';
+import 'location_access_dialogs.dart';
+import 'location_picker_screen.dart';
+import 'widgets/mini_map_picker_preview.dart';
 
 /// Layar Buat Permintaan Panggilan Bantuan Montir sesuai PRD Bagian 7 (M7)
 class CreateHelpRequestScreen extends ConsumerStatefulWidget {
@@ -32,8 +38,10 @@ class _CreateHelpRequestScreenState
   String _selectedCategory = CommonIssues.mesinMogok;
   late final TextEditingController _descriptionController;
   late final TextEditingController _addressController;
+  late final TextEditingController _landmarkController;
   late final TextEditingController _phoneController;
 
+  String _cityRegency = 'Kota Lhokseumawe';
   double? _latitude;
   double? _longitude;
   bool _isDetectingLocation = false;
@@ -45,6 +53,7 @@ class _CreateHelpRequestScreenState
     super.initState();
     _descriptionController = TextEditingController();
     _addressController = TextEditingController();
+    _landmarkController = TextEditingController();
 
     final user = ref.read(currentUserProvider);
     _phoneController = TextEditingController(text: user?.phone ?? '');
@@ -54,87 +63,134 @@ class _CreateHelpRequestScreenState
   void dispose() {
     _descriptionController.dispose();
     _addressController.dispose();
+    _landmarkController.dispose();
     _phoneController.dispose();
     super.dispose();
   }
 
-  /// Mendeteksi koordinat GPS pengguna dengan penjelasan izin ramah
+  /// Mendeteksi koordinat GPS pengguna dengan penjelasan izin kontekstual (Figma 09.06 & 09.07)
   Future<void> _detectGpsLocation() async {
     setState(() => _isDetectingLocation = true);
+    final service = ref.read(userLocationServiceProvider);
 
     try {
-      final bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
-      if (!serviceEnabled) {
-        if (mounted) {
+      final result = await service.requestCurrentLocation();
+      if (!mounted) return;
+
+      switch (result.status) {
+        case LocationStatus.success:
+          setState(() {
+            _latitude = result.latitude;
+            _longitude = result.longitude;
+            _cityRegency = result.cityRegency;
+            if (result.formattedAddress != null && result.formattedAddress!.isNotEmpty) {
+              _addressController.text = result.formattedAddress!;
+            }
+          });
+          ref.read(globalUserLocationProvider.notifier).setManualLocation(
+                address: result.formattedAddress ?? _addressController.text,
+                cityRegency: result.cityRegency,
+                latitude: result.latitude,
+                longitude: result.longitude,
+              );
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text(
-                'Layanan GPS di perangkat Anda belum aktif. Mohon aktifkan GPS.',
-              ),
+            SnackBar(
+              content: Text('Lokasi terdeteksi: ${result.formattedAddress}'),
+              backgroundColor: AppColors.success,
             ),
           );
-        }
-        return;
-      }
+          break;
 
-      LocationPermission permission = await Geolocator.checkPermission();
-      if (permission == LocationPermission.denied) {
-        permission = await Geolocator.requestPermission();
-        if (permission == LocationPermission.denied) {
-          if (mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content: Text(
-                  'Izin lokasi diperlukan agar mekanik dapat menuju posisi Anda.',
-                ),
-              ),
-            );
-          }
-          return;
-        }
-      }
-
-      if (permission == LocationPermission.deniedForever) {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text(
-                'Izin lokasi dinonaktifkan secara permanen di setelan HP.',
-              ),
+        case LocationStatus.permissionDenied:
+          showDialog<void>(
+            context: context,
+            builder: (ctx) => LocationPermissionDialog(
+              isPermanentlyDenied: false,
+              onRetry: () {
+                Navigator.pop(ctx);
+                _detectGpsLocation();
+              },
+              onManualInput: () => Navigator.pop(ctx),
             ),
           );
-        }
-        return;
-      }
+          break;
 
-      final Position pos = await Geolocator.getCurrentPosition(
-        timeLimit: const Duration(seconds: 5),
-      );
+        case LocationStatus.permissionDeniedForever:
+          showDialog<void>(
+            context: context,
+            builder: (ctx) => LocationPermissionDialog(
+              isPermanentlyDenied: true,
+              onRetry: () async {
+                Navigator.pop(ctx);
+                await service.openAppSettings();
+              },
+              onManualInput: () => Navigator.pop(ctx),
+            ),
+          );
+          break;
 
-      if (mounted) {
-        setState(() {
-          _latitude = pos.latitude;
-          _longitude = pos.longitude;
-          if (_addressController.text.trim().isEmpty) {
-            _addressController.text =
-                'Lokasi GPS (${pos.latitude.toStringAsFixed(5)}, ${pos.longitude.toStringAsFixed(5)})';
-          }
-        });
+        case LocationStatus.serviceDisabled:
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: const Text('Layanan GPS di perangkat belum aktif. Aktifkan lokasi.'),
+              action: SnackBarAction(
+                label: 'Setelan',
+                textColor: Colors.white,
+                onPressed: () => service.openLocationSettings(),
+              ),
+              backgroundColor: AppColors.warning,
+            ),
+          );
+          break;
 
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Lokasi koordinat GPS berhasil diperoleh.'),
-            backgroundColor: AppColors.success,
-          ),
-        );
+        case LocationStatus.outOfServiceArea:
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                result.errorMessage ??
+                    'Lokasi Anda berada di luar cakupan MotoCare. Masukkan alamat di Lhokseumawe/Aceh Utara.',
+              ),
+              backgroundColor: AppColors.error,
+            ),
+          );
+          break;
+
+        case LocationStatus.timeout:
+          showDialog<void>(
+            context: context,
+            builder: (ctx) => LocationStaleDialog(
+              lastAddress: _addressController.text.isNotEmpty
+                  ? _addressController.text
+                  : 'Banda Sakti, Kota Lhokseumawe',
+              lastUpdatedText: 'Sinyal GPS lemah',
+              onRefresh: () {
+                Navigator.pop(ctx);
+                _detectGpsLocation();
+              },
+              onUseLastLocation: () {
+                Navigator.pop(ctx);
+                if (_addressController.text.isEmpty) {
+                  _addressController.text = 'Jl. Merdeka, Banda Sakti, Kota Lhokseumawe';
+                }
+              },
+            ),
+          );
+          break;
+
+        default:
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(result.errorMessage ?? 'Gagal mendeteksi sinyal GPS. Anda dapat mengisi manual.'),
+              backgroundColor: AppColors.error,
+            ),
+          );
+          break;
       }
     } catch (_) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text(
-              'Gagal mendeteksi sinyal GPS. Anda dapat mengisi alamat manual.',
-            ),
+            content: Text('Gagal mendeteksi sinyal GPS. Anda dapat mengisi alamat manual.'),
           ),
         );
       }
@@ -148,22 +204,30 @@ class _CreateHelpRequestScreenState
   Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) return;
 
+    // Validasi cakupan wilayah layanan (Kota Lhokseumawe & Kab. Aceh Utara)
+    if (!HelpRequestRules.isWithinServiceArea(
+      latitude: _latitude,
+      longitude: _longitude,
+      cityRegency: _cityRegency,
+    )) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'Lokasi berada di luar wilayah layanan MotoCare. Layanan hanya mencakup Kota Lhokseumawe dan Kabupaten Aceh Utara.',
+          ),
+          backgroundColor: AppColors.error,
+        ),
+      );
+      return;
+    }
+
     final user = ref.read(currentUserProvider);
     final userId = user?.id ?? 'user-current';
 
-    // Konfirmasi ringkasan sebelum kirim sesuai PRD 631
-    final confirmed = await ConfirmationDialog.show(
-      context,
-      title: 'Konfirmasi Panggilan Montir',
-      message:
-          'Anda akan memanggil mekanik untuk masalah "$_selectedCategory". '
-          'Pastikan nomor telepon dan alamat Anda sudah benar:\n\n'
-          '📍 Alamat: ${_addressController.text.trim()}\n'
-          '📞 Kontak: ${_phoneController.text.trim()}\n'
-          '🏍️ Motor: ${_selectedMotorcycleName ?? "Tidak ditentukan"}',
-      confirmLabel: 'Ya, Panggil Montir',
-      cancelLabel: 'Periksa Kembali',
-    );
+    final landmarkText = _landmarkController.text.trim();
+
+    // Tinjau Permintaan (Figma 03.04 & PRD 631)
+    final confirmed = await _showReviewBottomSheet(context);
 
     if (confirmed != true || !mounted) return;
 
@@ -177,10 +241,13 @@ class _CreateHelpRequestScreenState
       latitude: _latitude,
       longitude: _longitude,
       addressText: _addressController.text.trim(),
+      cityRegency: _cityRegency,
+      landmark: landmarkText.isNotEmpty ? landmarkText : null,
       contactPhone: _phoneController.text.trim(),
       createdAt: DateTime.now(),
       expiresAt: DateTime.now().add(const Duration(minutes: 15)),
-      isDemo: true,
+      isDemo: AppEnv.showDemoFeatures,
+      idempotencyKey: MapsSessionTokenManager.generateUuidV4(),
     );
 
     final created = await ref
@@ -272,20 +339,325 @@ class _CreateHelpRequestScreenState
     );
   }
 
+  Future<bool?> _showReviewBottomSheet(BuildContext context) {
+    final landmarkText = _landmarkController.text.trim();
+    final addressText = _addressController.text.trim();
+    final phoneText = _phoneController.text.trim();
+    final hasCoords = _latitude != null && _longitude != null;
+
+    return showModalBottomSheet<bool>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) => Container(
+        constraints: BoxConstraints(
+          maxHeight: MediaQuery.of(ctx).size.height * 0.90,
+        ),
+        decoration: const BoxDecoration(
+          color: AppColors.surfaceBright,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+          boxShadow: <BoxShadow>[
+            BoxShadow(
+              color: Color(0x261B2B25),
+              blurRadius: 24,
+              offset: Offset(0, -6),
+            ),
+          ],
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: <Widget>[
+            const SizedBox(height: 12),
+            Container(
+              width: 44,
+              height: 4,
+              decoration: BoxDecoration(
+                color: AppColors.border,
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+            const SizedBox(height: 12),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20),
+              child: Row(
+                children: <Widget>[
+                  const Expanded(
+                    child: Text(
+                      'Konfirmasi Panggilan Montir',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w800,
+                        color: AppColors.textPrimary,
+                      ),
+                    ),
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.close_rounded),
+                    onPressed: () => Navigator.of(ctx).pop(false),
+                  ),
+                ],
+              ),
+            ),
+            const Divider(height: 1),
+            Flexible(
+              child: ListView(
+                padding: const EdgeInsets.all(20),
+                shrinkWrap: true,
+                children: <Widget>[
+                  if (hasCoords) ...<Widget>[
+                    MiniMapPickerPreview(
+                      latitude: _latitude!,
+                      longitude: _longitude!,
+                      address: addressText,
+                      isWithinServiceArea: true,
+                      height: 140,
+                    ),
+                    const SizedBox(height: 14),
+                  ],
+                  Container(
+                    padding: const EdgeInsets.all(14),
+                    decoration: BoxDecoration(
+                      color: AppColors.surface,
+                      borderRadius: BorderRadius.circular(14),
+                      border: Border.all(color: AppColors.border),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: <Widget>[
+                        const Row(
+                          children: <Widget>[
+                            Icon(
+                              Icons.location_on_rounded,
+                              size: 16,
+                              color: AppColors.primary,
+                            ),
+                            SizedBox(width: 6),
+                            Text(
+                              'Lokasi Penjemputan',
+                              style: TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.w700,
+                                color: AppColors.primaryText,
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 6),
+                        Text(
+                          addressText,
+                          style: const TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w600,
+                            color: AppColors.textPrimary,
+                          ),
+                        ),
+                        Text(
+                          _cityRegency,
+                          style: const TextStyle(
+                            fontSize: 11,
+                            color: AppColors.textSecondary,
+                          ),
+                        ),
+                        if (landmarkText.isNotEmpty) ...<Widget>[
+                          const SizedBox(height: 6),
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 8,
+                              vertical: 4,
+                            ),
+                            decoration: BoxDecoration(
+                              color: AppColors.cream,
+                              borderRadius: BorderRadius.circular(6),
+                            ),
+                            child: Text(
+                              'Patokan: $landmarkText',
+                              style: const TextStyle(
+                                fontSize: 11,
+                                fontWeight: FontWeight.w600,
+                                color: AppColors.primaryText,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  Container(
+                    padding: const EdgeInsets.all(14),
+                    decoration: BoxDecoration(
+                      color: AppColors.surface,
+                      borderRadius: BorderRadius.circular(14),
+                      border: Border.all(color: AppColors.border),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: <Widget>[
+                        Row(
+                          children: <Widget>[
+                            const Icon(
+                              Icons.two_wheeler_rounded,
+                              size: 16,
+                              color: AppColors.primary,
+                            ),
+                            const SizedBox(width: 6),
+                            Text(
+                              _selectedMotorcycleName ??
+                                  'Motor Belum Ditentukan',
+                              style: const TextStyle(
+                                fontSize: 13,
+                                fontWeight: FontWeight.w700,
+                                color: AppColors.textPrimary,
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          'Kendala: $_selectedCategory',
+                          style: const TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w700,
+                            color: AppColors.primaryText,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          _descriptionController.text.trim(),
+                          style: const TextStyle(
+                            fontSize: 12,
+                            color: AppColors.textSecondary,
+                            fontStyle: FontStyle.italic,
+                          ),
+                        ),
+                        const Divider(height: 16),
+                        Row(
+                          children: <Widget>[
+                            const Icon(
+                              Icons.phone_outlined,
+                              size: 14,
+                              color: AppColors.textSecondary,
+                            ),
+                            const SizedBox(width: 6),
+                            Text(
+                              'Kontak: $phoneText',
+                              style: const TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.w600,
+                                color: AppColors.textPrimary,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 14),
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: AppColors.cream,
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: AppColors.border),
+                    ),
+                    child: const Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: <Widget>[
+                        Icon(
+                          Icons.info_outline_rounded,
+                          size: 16,
+                          color: AppColors.primary,
+                        ),
+                        SizedBox(width: 8),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: <Widget>[
+                              Text(
+                                'Kesepakatan Biaya & Waktu Aktif',
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w700,
+                                  color: AppColors.textPrimary,
+                                ),
+                              ),
+                              SizedBox(height: 3),
+                              Text(
+                                'Mekanik terdekat akan segera dihubungi. Permintaan aktif selama 15 menit.',
+                                style: TextStyle(
+                                  fontSize: 11,
+                                  color: AppColors.textSecondary,
+                                  height: 1.35,
+                                ),
+                              ),
+                              SizedBox(height: 2),
+                              Text(
+                                'Biaya jasa perbaikan disepakati langsung dengan montir di lokasi pengerjaan.',
+                                style: TextStyle(
+                                  fontSize: 11,
+                                  color: AppColors.textSecondary,
+                                  height: 1.35,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+                  PrimaryButton(
+                    key: const Key('confirmation_dialog_confirm_button'),
+                    label: 'Konfirmasi & Panggil Montir',
+                    icon: Icons.support_agent_rounded,
+                    onPressed: () => Navigator.of(ctx).pop(true),
+                  ),
+                  const SizedBox(height: 10),
+                  OutlinedButton(
+                    key: const Key('confirmation_dialog_cancel_button'),
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: AppColors.textSecondary,
+                      side: const BorderSide(color: AppColors.border),
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                    onPressed: () => Navigator.of(ctx).pop(false),
+                    child: const Center(
+                      child: Text(
+                        'Periksa Kembali',
+                        style: TextStyle(
+                          fontWeight: FontWeight.w700,
+                          fontSize: 13,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final motorcyclesAsync = ref.watch(motorcyclesProvider);
     final actionState = ref.watch(helpRequestActionNotifierProvider);
 
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: Colors.transparent,
       appBar: AppBar(
         title: const Text('Panggil Montir'),
       ),
-      body: SafeArea(
-        child: Form(
-          key: _formKey,
-          child: ListView(
+      body: AppBackground(
+        child: SafeArea(
+          child: Form(
+            key: _formKey,
+            child: ListView(
             padding: const EdgeInsets.all(16),
             children: <Widget>[
               // Banner Pernyataan Batas Layanan sesuai PRD 503 & 6.6
@@ -343,11 +715,11 @@ class _CreateHelpRequestScreenState
                     onSelected: (_) =>
                         setState(() => _selectedCategory = category),
                     selectedColor: AppColors.primary,
-                    backgroundColor: AppColors.surface,
+                    backgroundColor: AppColors.surfaceBright,
                     labelStyle: TextStyle(
                       color: isSelected ? Colors.white : AppColors.textPrimary,
                       fontWeight:
-                          isSelected ? FontWeight.w700 : FontWeight.w500,
+                          isSelected ? FontWeight.w700 : FontWeight.w600,
                       fontSize: 12,
                     ),
                     shape: RoundedRectangleBorder(
@@ -414,23 +786,40 @@ class _CreateHelpRequestScreenState
                       color: AppColors.textPrimary,
                     ),
                   ),
-                  TextButton.icon(
-                    key: const Key('get_gps_location_button'),
-                    icon: _isDetectingLocation
-                        ? const SizedBox(
-                            width: 14,
-                            height: 14,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2,
-                              color: AppColors.primary,
-                            ),
-                          )
-                        : const Icon(Icons.my_location_rounded, size: 16),
-                    label: Text(
-                      _isDetectingLocation ? 'Mencari...' : 'Gunakan GPS',
-                      style: const TextStyle(fontSize: 12),
-                    ),
-                    onPressed: _isDetectingLocation ? null : _detectGpsLocation,
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: <Widget>[
+                      TextButton.icon(
+                        key: const Key('btn_open_picker_from_form'),
+                        icon: const Icon(Icons.map_outlined, size: 15),
+                        label: const Text('Peta', style: TextStyle(fontSize: 12)),
+                        onPressed: () async {
+                          final result = await context.push<LocationDraft>('/help/picker');
+                          if (result != null && mounted) {
+                            setState(() {
+                              _addressController.text = result.addressText;
+                              _cityRegency = result.cityRegency;
+                              _latitude = result.latitude;
+                              _longitude = result.longitude;
+                              if (result.landmark != null && result.landmark!.isNotEmpty) {
+                                _landmarkController.text = result.landmark!;
+                              }
+                            });
+                          }
+                        },
+                      ),
+                      TextButton.icon(
+                        key: const Key('get_gps_location_button'),
+                        icon: _isDetectingLocation
+                            ? MotoCareLoadingIndicator.small(color: AppColors.primary)
+                            : const Icon(Icons.my_location_rounded, size: 15),
+                        label: Text(
+                          _isDetectingLocation ? 'Mencari...' : 'GPS',
+                          style: const TextStyle(fontSize: 12),
+                        ),
+                        onPressed: _isDetectingLocation ? null : _detectGpsLocation,
+                      ),
+                    ],
                   ),
                 ],
               ),
@@ -449,6 +838,73 @@ class _CreateHelpRequestScreenState
                       'Jl. Merdeka No. 12, depan ruko fotocopy, Banda Sakti...',
                   prefixIcon: const Icon(
                     Icons.location_on_outlined,
+                    color: AppColors.textSecondary,
+                  ),
+                  filled: true,
+                  fillColor: AppColors.surface,
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: const BorderSide(color: AppColors.border),
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: const BorderSide(color: AppColors.border),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 10),
+
+              // Pilihan Wilayah Administratif Layanan
+              Wrap(
+                spacing: 8,
+                runSpacing: 6,
+                crossAxisAlignment: WrapCrossAlignment.center,
+                children: <Widget>[
+                  const Text(
+                    'Wilayah: ',
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                      color: AppColors.textSecondary,
+                    ),
+                  ),
+                  ChoiceChip(
+                    key: const Key('chip_lhokseumawe'),
+                    label: const Text('Kota Lhokseumawe', style: TextStyle(fontSize: 12)),
+                    selected: _cityRegency == 'Kota Lhokseumawe',
+                    selectedColor: AppColors.cream,
+                    side: BorderSide(
+                      color: _cityRegency == 'Kota Lhokseumawe' ? AppColors.primary : AppColors.border,
+                    ),
+                    onSelected: (selected) {
+                      if (selected) setState(() => _cityRegency = 'Kota Lhokseumawe');
+                    },
+                  ),
+                  ChoiceChip(
+                    key: const Key('chip_aceh_utara'),
+                    label: const Text('Kab. Aceh Utara', style: TextStyle(fontSize: 12)),
+                    selected: _cityRegency == 'Kabupaten Aceh Utara',
+                    selectedColor: AppColors.cream,
+                    side: BorderSide(
+                      color: _cityRegency == 'Kabupaten Aceh Utara' ? AppColors.primary : AppColors.border,
+                    ),
+                    onSelected: (selected) {
+                      if (selected) setState(() => _cityRegency = 'Kabupaten Aceh Utara');
+                    },
+                  ),
+                ],
+              ),
+              const SizedBox(height: 10),
+
+              // Patokan Lokasi Opsional (Landmark)
+              TextFormField(
+                key: const Key('help_landmark_field'),
+                controller: _landmarkController,
+                decoration: InputDecoration(
+                  labelText: 'Patokan Lokasi (Opsional)',
+                  hintText: 'Contoh: Depan ruko fotocopy, dekat SPBU Cunda...',
+                  prefixIcon: const Icon(
+                    Icons.flag_outlined,
                     color: AppColors.textSecondary,
                   ),
                   filled: true,
@@ -587,6 +1043,7 @@ class _CreateHelpRequestScreenState
           ),
         ),
       ),
-    );
-  }
+    ),
+  );
+}
 }
