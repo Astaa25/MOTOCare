@@ -275,14 +275,19 @@ class _ServiceHistoryScreenState extends ConsumerState<ServiceHistoryScreen> {
                                         Row(
                                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                           children: <Widget>[
-                                            Text(
-                                              item.serviceType,
-                                              style: const TextStyle(
-                                                fontSize: 15,
-                                                fontWeight: FontWeight.w700,
-                                                color: AppColors.textPrimary,
+                                            Expanded(
+                                              child: Text(
+                                                item.serviceType,
+                                                maxLines: 1,
+                                                overflow: TextOverflow.ellipsis,
+                                                style: const TextStyle(
+                                                  fontSize: 15,
+                                                  fontWeight: FontWeight.w700,
+                                                  color: AppColors.textPrimary,
+                                                ),
                                               ),
                                             ),
+                                            const SizedBox(width: 8),
                                             Text(
                                               AppFormatters.rupiah(item.cost),
                                               style: const TextStyle(

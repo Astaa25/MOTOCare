@@ -3,8 +3,9 @@ import '../../../core/errors/app_exception.dart';
 import '../../../core/utils/result.dart';
 import '../domain/motorcycle.dart';
 import '../domain/motorcycle_repository.dart';
+import 'motorcycle_catalog.dart';
 
-/// Implementasi Mock MotorcycleRepository untuk testing dan mode offline demo
+/// Implementasi Mock MotorcycleRepository untuk testing dan mode offline
 class MockMotorcycleRepository implements MotorcycleRepository {
   final List<Motorcycle> _motorcycles = <Motorcycle>[];
   final StreamController<List<Motorcycle>> _streamController =
@@ -26,6 +27,12 @@ class MockMotorcycleRepository implements MotorcycleRepository {
           licensePlate: 'BL 4521 KF',
           currentMileage: 12450,
           mileageUpdatedAt: DateTime.now().subtract(const Duration(days: 5)),
+          color: 'Hitam Doff',
+          category: 'Skutik Sporty',
+          engineCc: 160,
+          transmission: 'Otomatis (CVT)',
+          fuelType: 'Pertamax (RON 92)',
+          photoUrl: MotorcycleCatalog.assetVario,
           createdAt: DateTime.now().subtract(const Duration(days: 60)),
           updatedAt: DateTime.now().subtract(const Duration(days: 5)),
         ),
@@ -38,6 +45,12 @@ class MockMotorcycleRepository implements MotorcycleRepository {
           licensePlate: 'BL 6812 KP',
           currentMileage: 24100,
           mileageUpdatedAt: DateTime.now().subtract(const Duration(days: 3)),
+          color: 'Biru Navy',
+          category: 'Skutik Maxi',
+          engineCc: 155,
+          transmission: 'Otomatis (CVT)',
+          fuelType: 'Pertamax (RON 92)',
+          photoUrl: MotorcycleCatalog.assetNmax,
           createdAt: DateTime.now().subtract(const Duration(days: 120)),
           updatedAt: DateTime.now().subtract(const Duration(days: 3)),
         ),
@@ -50,6 +63,12 @@ class MockMotorcycleRepository implements MotorcycleRepository {
           licensePlate: 'BL 3190 QA',
           currentMileage: 31800,
           mileageUpdatedAt: DateTime.now().subtract(const Duration(days: 35)),
+          color: 'Hitam Doff',
+          category: 'Skutik Harian',
+          engineCc: 110,
+          transmission: 'Otomatis (CVT)',
+          fuelType: 'Pertalite (RON 90)',
+          photoUrl: MotorcycleCatalog.assetVario,
           createdAt: DateTime.now().subtract(const Duration(days: 200)),
           updatedAt: DateTime.now().subtract(const Duration(days: 35)),
         ),
@@ -62,6 +81,12 @@ class MockMotorcycleRepository implements MotorcycleRepository {
           licensePlate: 'BL 5542 AB',
           currentMileage: 8200,
           mileageUpdatedAt: DateTime.now().subtract(const Duration(days: 8)),
+          color: 'Abu Titanium',
+          category: 'Skutik Sporty',
+          engineCc: 155,
+          transmission: 'Otomatis (CVT)',
+          fuelType: 'Pertamax (RON 92)',
+          photoUrl: MotorcycleCatalog.assetVario,
           createdAt: DateTime.now().subtract(const Duration(days: 90)),
           updatedAt: DateTime.now().subtract(const Duration(days: 8)),
         ),
@@ -74,6 +99,12 @@ class MockMotorcycleRepository implements MotorcycleRepository {
           licensePlate: 'BL 2981 LM',
           currentMileage: 16500,
           mileageUpdatedAt: DateTime.now().subtract(const Duration(days: 12)),
+          color: 'Putih Mutiara',
+          category: 'Skutik Retro',
+          engineCc: 110,
+          transmission: 'Otomatis (CVT)',
+          fuelType: 'Pertalite (RON 90)',
+          photoUrl: MotorcycleCatalog.assetScoopy,
           createdAt: DateTime.now().subtract(const Duration(days: 150)),
           updatedAt: DateTime.now().subtract(const Duration(days: 12)),
         ),
@@ -129,11 +160,18 @@ class MockMotorcycleRepository implements MotorcycleRepository {
     required int productionYear,
     String? licensePlate,
     required int currentMileage,
+    String? color,
+    String? category,
+    int? engineCc,
+    String? transmission,
+    String? fuelType,
+    String? photoUrl,
   }) async {
     if (simulateDelay) {
       await Future<void>.delayed(const Duration(milliseconds: 80));
     }
     final now = DateTime.now();
+    final spec = MotorcycleCatalog.findSpec(brand, model);
     final newMotor = Motorcycle(
       id: 'motor-${DateTime.now().millisecondsSinceEpoch}',
       userId: userId,
@@ -143,6 +181,14 @@ class MockMotorcycleRepository implements MotorcycleRepository {
       licensePlate: licensePlate?.trim().toUpperCase(),
       currentMileage: currentMileage,
       mileageUpdatedAt: now,
+      color: (color != null && color.trim().isNotEmpty) ? color.trim() : spec.defaultColor,
+      category: (category != null && category.trim().isNotEmpty) ? category.trim() : spec.category,
+      engineCc: engineCc ?? spec.engineCc,
+      transmission: (transmission != null && transmission.trim().isNotEmpty)
+          ? transmission.trim()
+          : spec.transmission,
+      fuelType: (fuelType != null && fuelType.trim().isNotEmpty) ? fuelType.trim() : spec.fuelType,
+      photoUrl: (photoUrl != null && photoUrl.trim().isNotEmpty) ? photoUrl.trim() : spec.assetPath,
       createdAt: now,
       updatedAt: now,
     );

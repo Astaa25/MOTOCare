@@ -26,7 +26,12 @@ import '../../features/help_requests/presentation/help_request_detail_screen.dar
 import '../../features/help_requests/presentation/live_tracking_screen.dart';
 import '../../features/help_requests/presentation/location_picker_screen.dart';
 import '../../features/help_requests/presentation/my_help_requests_screen.dart';
+import '../../features/home/presentation/admin_home_screen.dart';
+import '../../features/motorcycles/presentation/motorcycle_providers.dart';
 import '../../features/tutorials/presentation/tutorial_detail_screen.dart';
+import '../widgets/animated_loading.dart';
+import '../widgets/app_background.dart';
+import '../widgets/empty_state.dart';
 import '../../features/tutorials/presentation/tutorials_screen.dart';
 import '../../features/workshops/presentation/workshop_detail_screen.dart';
 import '../../features/workshops/presentation/workshops_screen.dart';
@@ -386,6 +391,31 @@ final routerProvider = Provider<GoRouter>((ref) {
         ),
       ),
 
+      // Pintasan Global Riwayat Servis & Pengingat (dari Beranda agar tidak 404)
+      GoRoute(
+        path: '/service-history',
+        pageBuilder: (context, state) => AppMotion.sharedAxisPage(
+          key: state.pageKey,
+          child: const _ActiveMotorcycleShortcutScreen(isReminders: false),
+        ),
+      ),
+      GoRoute(
+        path: '/reminders',
+        pageBuilder: (context, state) => AppMotion.sharedAxisPage(
+          key: state.pageKey,
+          child: const _ActiveMotorcycleShortcutScreen(isReminders: true),
+        ),
+      ),
+
+      // Area Admin (UC-07)
+      GoRoute(
+        path: '/admin',
+        pageBuilder: (context, state) => AppMotion.sharedAxisPage(
+          key: state.pageKey,
+          child: const AdminHomeScreen(),
+        ),
+      ),
+
       // Edit Profil (M2)
       GoRoute(
         path: '/profile/edit',
@@ -397,3 +427,64 @@ final routerProvider = Provider<GoRouter>((ref) {
     ],
   );
 });
+
+/// Wrapper pintasan `/service-history` & `/reminders` yang otomatis memilih motor aktif
+/// atau menampilkan ajakan tambah motor bila garasi masih kosong.
+class _ActiveMotorcycleShortcutScreen extends ConsumerWidget {
+  final bool isReminders;
+
+  const _ActiveMotorcycleShortcutScreen({required this.isReminders});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final activeAsync = ref.watch(activeMotorcycleProvider);
+    final active = activeAsync.valueOrNull;
+
+    if (active != null) {
+      return isReminders
+          ? RemindersScreen(motorcycleId: active.id)
+          : ServiceHistoryScreen(motorcycleId: active.id);
+    }
+
+    return Scaffold(
+      backgroundColor: Colors.transparent,
+      appBar: AppBar(
+        title: Text(isReminders ? 'Pengingat Servis' : 'Riwayat Servis'),
+      ),
+      body: AppBackground(
+        child: SafeArea(
+          child: activeAsync.when(
+            loading: () => Center(
+              child: MotoCareLoadingIndicator.medium(
+                message: 'Memuat data kendaraan...',
+              ),
+            ),
+            error: (err, _) => EmptyState(
+              icon: Icons.two_wheeler_rounded,
+              title: 'Belum Ada Sepeda Motor',
+              message:
+                  'Tambahkan sepeda motor terlebih dahulu untuk melihat ${isReminders ? 'pengingat servis' : 'riwayat servis'}.',
+              actionLabel: 'Tambah Motor Sekarang',
+              onAction: () => context.push('/motors/new'),
+            ),
+            data: (motor) {
+              if (motor == null) {
+                return EmptyState(
+                  icon: Icons.two_wheeler_rounded,
+                  title: 'Belum Ada Sepeda Motor',
+                  message:
+                      'Tambahkan sepeda motor terlebih dahulu untuk memantau ${isReminders ? 'jadwal pengingat servis' : 'riwayat dan biaya servis'}.',
+                  actionLabel: 'Tambah Motor Sekarang',
+                  onAction: () => context.push('/motors/new'),
+                );
+              }
+              return isReminders
+                  ? RemindersScreen(motorcycleId: motor.id)
+                  : ServiceHistoryScreen(motorcycleId: motor.id);
+            },
+          ),
+        ),
+      ),
+    );
+  }
+}

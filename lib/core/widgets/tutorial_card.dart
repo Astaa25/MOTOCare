@@ -149,12 +149,16 @@ class TutorialCard extends StatelessWidget {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: <Widget>[
-                      const Text(
-                        'YouTube',
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: Colors.red,
-                          fontWeight: FontWeight.w700,
+                      const Flexible(
+                        child: Text(
+                          'YouTube',
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: Colors.red,
+                            fontWeight: FontWeight.w700,
+                          ),
                         ),
                       ),
                       TextButton.icon(

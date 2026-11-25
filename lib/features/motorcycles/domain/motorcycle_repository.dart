@@ -12,7 +12,7 @@ abstract class MotorcycleRepository {
   /// Mengambil rincian sepeda motor berdasarkan ID
   Future<Result<Motorcycle>> getMotorcycleById(String id);
 
-  /// Menambahkan sepeda motor baru
+  /// Menambahkan sepeda motor baru beserta atribut detail & foto
   Future<Result<Motorcycle>> addMotorcycle({
     required String userId,
     required String brand,
@@ -20,6 +20,12 @@ abstract class MotorcycleRepository {
     required int productionYear,
     String? licensePlate,
     required int currentMileage,
+    String? color,
+    String? category,
+    int? engineCc,
+    String? transmission,
+    String? fuelType,
+    String? photoUrl,
   });
 
   /// Memperbarui informasi umum sepeda motor (merek, model, tahun, plat)

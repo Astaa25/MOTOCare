@@ -364,8 +364,88 @@ begin
 end $$;
 
 -- ============================================================================
--- 4. VEHICLES, HISTORIES, REMINDERS, REQUESTS, REVIEWS & NOTIFICATIONS
+-- 4. VEHICLES DETAIL COLUMNS, MOTORCYCLE CATALOG, VEHICLES, HISTORIES, ETC.
 -- ============================================================================
+alter table public.vehicles
+  add column if not exists color text,
+  add column if not exists category text,
+  add column if not exists engine_cc integer,
+  add column if not exists transmission text,
+  add column if not exists fuel_type text,
+  add column if not exists photo_url text;
+
+create table if not exists public.motorcycle_catalog (
+  id uuid primary key default uuid_generate_v4(),
+  brand text not null,
+  model text not null,
+  category text not null,
+  engine_cc integer not null,
+  transmission text not null,
+  fuel_type text not null,
+  default_color text not null,
+  photo_url text not null,
+  created_at timestamptz not null default now(),
+  unique (brand, model)
+);
+
+insert into public.motorcycle_catalog (
+  brand, model, category, engine_cc, transmission, fuel_type, default_color, photo_url
+)
+values
+  ('Honda', 'BeAT Deluxe', 'Skutik Harian', 110, 'Otomatis (CVT)', 'Pertalite (RON 90)', 'Hitam Doff', 'assets/images/motorcycles/vario_160.jpg'),
+  ('Honda', 'BeAT Street', 'Skutik Harian', 110, 'Otomatis (CVT)', 'Pertalite (RON 90)', 'Abu Titanium', 'assets/images/motorcycles/vario_160.jpg'),
+  ('Honda', 'Genio', 'Skutik Harian', 110, 'Otomatis (CVT)', 'Pertalite (RON 90)', 'Merah Crimson', 'assets/images/motorcycles/scoopy_prestige.jpg'),
+  ('Honda', 'Scoopy Prestige', 'Skutik Retro', 110, 'Otomatis (CVT)', 'Pertalite (RON 90)', 'Putih Mutiara', 'assets/images/motorcycles/scoopy_prestige.jpg'),
+  ('Honda', 'Vario 125', 'Skutik Harian', 125, 'Otomatis (CVT)', 'Pertalite (RON 90)', 'Biru Navy', 'assets/images/motorcycles/vario_160.jpg'),
+  ('Honda', 'Vario 160', 'Skutik Sporty', 160, 'Otomatis (CVT)', 'Pertamax (RON 92)', 'Hitam Doff', 'assets/images/motorcycles/vario_160.jpg'),
+  ('Honda', 'Stylo 160', 'Skutik Retro', 160, 'Otomatis (CVT)', 'Pertamax (RON 92)', 'Hijau Sage', 'assets/images/motorcycles/scoopy_prestige.jpg'),
+  ('Honda', 'PCX 160', 'Skutik Maxi', 160, 'Otomatis (CVT)', 'Pertamax (RON 92)', 'Putih Mutiara', 'assets/images/motorcycles/nmax_155.jpg'),
+  ('Honda', 'ADV 160', 'Skutik Maxi', 160, 'Otomatis (CVT)', 'Pertamax (RON 92)', 'Merah Crimson', 'assets/images/motorcycles/nmax_155.jpg'),
+  ('Honda', 'Forza 250', 'Skutik Maxi', 250, 'Otomatis (CVT)', 'Pertamax Turbo (RON 98)', 'Abu Titanium', 'assets/images/motorcycles/nmax_155.jpg'),
+  ('Honda', 'Revo X', 'Bebek / Cub', 110, 'Semi-Otomatis 4-Speed', 'Pertalite (RON 90)', 'Hitam Doff', 'assets/images/motorcycles/vario_160.jpg'),
+  ('Honda', 'Supra X 125', 'Bebek / Cub', 125, 'Semi-Otomatis 4-Speed', 'Pertalite (RON 90)', 'Hitam Doff', 'assets/images/motorcycles/vario_160.jpg'),
+  ('Honda', 'Supra GTR 150', 'Bebek / Cub', 150, 'Manual 6-Speed', 'Pertamax (RON 92)', 'Merah Crimson', 'assets/images/motorcycles/vario_160.jpg'),
+  ('Honda', 'Sonic 150R', 'Bebek / Cub', 150, 'Manual 6-Speed', 'Pertamax (RON 92)', 'Putih Mutiara', 'assets/images/motorcycles/vario_160.jpg'),
+  ('Honda', 'CB150R StreetFire', 'Sport Naked', 150, 'Manual 6-Speed', 'Pertamax (RON 92)', 'Merah Crimson', 'assets/images/motorcycles/vario_160.jpg'),
+  ('Honda', 'CB150X', 'Sport Naked', 150, 'Manual 6-Speed', 'Pertamax (RON 92)', 'Hijau Sage', 'assets/images/motorcycles/vario_160.jpg'),
+  ('Honda', 'CBR150R', 'Sport Fairing', 150, 'Manual 6-Speed', 'Pertamax (RON 92)', 'Merah Crimson', 'assets/images/motorcycles/vario_160.jpg'),
+  ('Honda', 'CRF 150L', 'Trail / Dual Sport', 150, 'Manual 5-Speed', 'Pertamax (RON 92)', 'Merah Crimson', 'assets/images/motorcycles/vario_160.jpg'),
+  ('Yamaha', 'Mio M3', 'Skutik Harian', 125, 'Otomatis (CVT)', 'Pertalite (RON 90)', 'Kuning Cyber', 'assets/images/motorcycles/vario_160.jpg'),
+  ('Yamaha', 'Gear 125', 'Skutik Harian', 125, 'Otomatis (CVT)', 'Pertalite (RON 90)', 'Perak Metalik', 'assets/images/motorcycles/vario_160.jpg'),
+  ('Yamaha', 'FreeGo 125', 'Skutik Harian', 125, 'Otomatis (CVT)', 'Pertalite (RON 90)', 'Biru Navy', 'assets/images/motorcycles/vario_160.jpg'),
+  ('Yamaha', 'Fino 125', 'Skutik Retro', 125, 'Otomatis (CVT)', 'Pertalite (RON 90)', 'Cokelat Prestige', 'assets/images/motorcycles/scoopy_prestige.jpg'),
+  ('Yamaha', 'Fazzio Hybrid', 'Skutik Retro', 125, 'Otomatis (CVT)', 'Pertamax (RON 92)', 'Putih Mutiara', 'assets/images/motorcycles/scoopy_prestige.jpg'),
+  ('Yamaha', 'Grand Filano', 'Skutik Retro', 125, 'Otomatis (CVT)', 'Pertamax (RON 92)', 'Cokelat Prestige', 'assets/images/motorcycles/scoopy_prestige.jpg'),
+  ('Yamaha', 'Lexi LX 155', 'Skutik Maxi', 155, 'Otomatis (CVT)', 'Pertamax (RON 92)', 'Abu Titanium', 'assets/images/motorcycles/nmax_155.jpg'),
+  ('Yamaha', 'Aerox 155', 'Skutik Sporty', 155, 'Otomatis (CVT)', 'Pertamax (RON 92)', 'Hitam Doff', 'assets/images/motorcycles/vario_160.jpg'),
+  ('Yamaha', 'NMAX 155', 'Skutik Maxi', 155, 'Otomatis (CVT)', 'Pertamax (RON 92)', 'Biru Navy', 'assets/images/motorcycles/nmax_155.jpg'),
+  ('Yamaha', 'NMAX Turbo', 'Skutik Maxi', 155, 'Otomatis (CVT)', 'Pertamax (RON 92)', 'Abu Titanium', 'assets/images/motorcycles/nmax_155.jpg'),
+  ('Yamaha', 'XMAX 250', 'Skutik Maxi', 250, 'Otomatis (CVT)', 'Pertamax Turbo (RON 98)', 'Hitam Doff', 'assets/images/motorcycles/nmax_155.jpg'),
+  ('Yamaha', 'Jupiter Z1', 'Bebek / Cub', 115, 'Semi-Otomatis 4-Speed', 'Pertalite (RON 90)', 'Biru Navy', 'assets/images/motorcycles/vario_160.jpg'),
+  ('Yamaha', 'MX King 150', 'Bebek / Cub', 150, 'Manual 5-Speed', 'Pertamax (RON 92)', 'Oranye Sporty', 'assets/images/motorcycles/vario_160.jpg'),
+  ('Yamaha', 'Vixion R', 'Sport Naked', 155, 'Manual 6-Speed', 'Pertamax (RON 92)', 'Hitam Doff', 'assets/images/motorcycles/vario_160.jpg'),
+  ('Yamaha', 'MT-15', 'Sport Naked', 155, 'Manual 6-Speed', 'Pertamax (RON 92)', 'Biru Navy', 'assets/images/motorcycles/vario_160.jpg'),
+  ('Yamaha', 'XSR 155', 'Sport Naked', 155, 'Manual 6-Speed', 'Pertamax (RON 92)', 'Perak Metalik', 'assets/images/motorcycles/vario_160.jpg'),
+  ('Yamaha', 'R15M', 'Sport Fairing', 155, 'Manual 6-Speed', 'Pertamax (RON 92)', 'Perak Metalik', 'assets/images/motorcycles/vario_160.jpg'),
+  ('Yamaha', 'WR 155R', 'Trail / Dual Sport', 155, 'Manual 6-Speed', 'Pertamax (RON 92)', 'Biru Navy', 'assets/images/motorcycles/vario_160.jpg'),
+  ('Suzuki', 'Nex II', 'Skutik Harian', 115, 'Otomatis (CVT)', 'Pertalite (RON 90)', 'Perak Metalik', 'assets/images/motorcycles/vario_160.jpg'),
+  ('Suzuki', 'Address FI', 'Skutik Harian', 115, 'Otomatis (CVT)', 'Pertalite (RON 90)', 'Putih Mutiara', 'assets/images/motorcycles/vario_160.jpg'),
+  ('Suzuki', 'Burgman Street 125EX', 'Skutik Maxi', 125, 'Otomatis (CVT)', 'Pertamax (RON 92)', 'Abu Titanium', 'assets/images/motorcycles/nmax_155.jpg'),
+  ('Suzuki', 'Satria F150', 'Bebek / Cub', 150, 'Manual 6-Speed', 'Pertamax (RON 92)', 'Hitam Doff', 'assets/images/motorcycles/vario_160.jpg'),
+  ('Suzuki', 'GSX-R150', 'Sport Fairing', 150, 'Manual 6-Speed', 'Pertamax (RON 92)', 'Biru Navy', 'assets/images/motorcycles/vario_160.jpg'),
+  ('Kawasaki', 'KLX 150', 'Trail / Dual Sport', 150, 'Manual 5-Speed', 'Pertamax (RON 92)', 'Hijau Sage', 'assets/images/motorcycles/vario_160.jpg'),
+  ('Kawasaki', 'W175 SE', 'Sport Naked', 177, 'Manual 5-Speed', 'Pertamax (RON 92)', 'Hitam Doff', 'assets/images/motorcycles/vario_160.jpg'),
+  ('Kawasaki', 'Ninja 250 SL', 'Sport Fairing', 250, 'Manual 6-Speed', 'Pertamax Turbo (RON 98)', 'Hijau Sage', 'assets/images/motorcycles/vario_160.jpg'),
+  ('Vespa', 'LX 125', 'Skutik Retro', 125, 'Otomatis (CVT)', 'Pertamax (RON 92)', 'Merah Crimson', 'assets/images/motorcycles/scoopy_prestige.jpg'),
+  ('Vespa', 'Primavera 150', 'Skutik Retro', 155, 'Otomatis (CVT)', 'Pertamax (RON 92)', 'Hijau Sage', 'assets/images/motorcycles/scoopy_prestige.jpg')
+on conflict (brand, model) do update set
+  category = excluded.category,
+  engine_cc = excluded.engine_cc,
+  transmission = excluded.transmission,
+  fuel_type = excluded.fuel_type,
+  default_color = excluded.default_color,
+  photo_url = excluded.photo_url;
+
 do $$
 declare
   v_owner_1 uuid := '00000000-0000-0000-0000-000000000001';
@@ -380,23 +460,36 @@ begin
   end if;
 
   if v_owner_1 is not null then
-    -- A. 8 Sepeda Motor Populer Indonesia
-    insert into public.vehicles (id, owner_id, brand, model, production_year, license_plate, current_km, is_simulation)
+    -- A. 12 Sepeda Motor Populer Indonesia Lengkap Detail (Warna, Kategori, CC, Transmisi, BBM, Foto)
+    insert into public.vehicles (
+      id, owner_id, brand, model, production_year, license_plate, current_km,
+      color, category, engine_cc, transmission, fuel_type, photo_url, is_simulation
+    )
     values
-      ('33333333-0000-0000-0000-000000000001', v_owner_1, 'Honda', 'Vario 160 CBS', 2023, 'BL 4521 KF', 12450, false),
-      ('33333333-0000-0000-0000-000000000002', v_owner_1, 'Yamaha', 'NMAX 155 Connected', 2022, 'BL 6812 KP', 24100, false),
-      ('33333333-0000-0000-0000-000000000003', v_owner_1, 'Honda', 'BeAT Deluxe eSP', 2021, 'BL 3190 QA', 31800, false),
-      ('33333333-0000-0000-0000-000000000004', v_owner_1, 'Yamaha', 'Aerox 155 CyberCity', 2023, 'BL 5542 AB', 8200, false),
-      ('33333333-0000-0000-0000-000000000005', v_owner_1, 'Honda', 'Scoopy Prestige', 2022, 'BL 2981 LM', 16500, false),
-      ('33333333-0000-0000-0000-000000000006', coalesce((select id from public.profiles where id = v_owner_2), v_owner_1), 'Honda', 'PCX 160 ABS', 2024, 'BL 7102 AZ', 5400, false),
-      ('33333333-0000-0000-0000-000000000007', coalesce((select id from public.profiles where id = v_owner_2), v_owner_1), 'Yamaha', 'Fazzio Neo Hybrid', 2023, 'BL 3891 BB', 9800, false),
-      ('33333333-0000-0000-0000-000000000008', coalesce((select id from public.profiles where id = v_owner_3), v_owner_1), 'Honda', 'CB150R StreetFire', 2022, 'BL 4412 KJ', 19300, false)
+      ('33333333-0000-0000-0000-000000000001', v_owner_1, 'Honda', 'Vario 160 CBS', 2023, 'BL 4521 KF', 12450, 'Hitam Doff', 'Skutik Sporty', 160, 'Otomatis (CVT)', 'Pertamax (RON 92)', 'assets/images/motorcycles/vario_160.jpg', false),
+      ('33333333-0000-0000-0000-000000000002', v_owner_1, 'Yamaha', 'NMAX 155 Connected', 2024, 'BL 3533 NAN', 17023, 'Biru Navy', 'Skutik Maxi', 155, 'Otomatis (CVT)', 'Pertamax (RON 92)', 'assets/images/motorcycles/nmax_155.jpg', false),
+      ('33333333-0000-0000-0000-000000000003', v_owner_1, 'Honda', 'BeAT Deluxe eSP', 2021, 'BL 3190 QA', 31800, 'Hitam Doff', 'Skutik Harian', 110, 'Otomatis (CVT)', 'Pertalite (RON 90)', 'assets/images/motorcycles/vario_160.jpg', false),
+      ('33333333-0000-0000-0000-000000000004', v_owner_1, 'Yamaha', 'Aerox 155 CyberCity', 2023, 'BL 5542 AB', 8200, 'Abu Titanium', 'Skutik Sporty', 155, 'Otomatis (CVT)', 'Pertamax (RON 92)', 'assets/images/motorcycles/vario_160.jpg', false),
+      ('33333333-0000-0000-0000-000000000005', v_owner_1, 'Honda', 'Scoopy Prestige', 2022, 'BL 2981 LM', 16500, 'Putih Mutiara', 'Skutik Retro', 110, 'Otomatis (CVT)', 'Pertalite (RON 90)', 'assets/images/motorcycles/scoopy_prestige.jpg', false),
+      ('33333333-0000-0000-0000-000000000006', coalesce((select id from public.profiles where id = v_owner_2), v_owner_1), 'Honda', 'PCX 160 ABS', 2024, 'BL 7102 AZ', 5400, 'Putih Mutiara', 'Skutik Maxi', 160, 'Otomatis (CVT)', 'Pertamax (RON 92)', 'assets/images/motorcycles/nmax_155.jpg', false),
+      ('33333333-0000-0000-0000-000000000007', coalesce((select id from public.profiles where id = v_owner_2), v_owner_1), 'Yamaha', 'Fazzio Neo Hybrid', 2023, 'BL 3891 BB', 9800, 'Putih Mutiara', 'Skutik Retro', 125, 'Otomatis (CVT)', 'Pertamax (RON 92)', 'assets/images/motorcycles/scoopy_prestige.jpg', false),
+      ('33333333-0000-0000-0000-000000000008', coalesce((select id from public.profiles where id = v_owner_3), v_owner_1), 'Honda', 'CB150R StreetFire', 2022, 'BL 4412 KJ', 19300, 'Merah Crimson', 'Sport Naked', 150, 'Manual 6-Speed', 'Pertamax (RON 92)', 'assets/images/motorcycles/vario_160.jpg', false),
+      ('33333333-0000-0000-0000-000000000009', v_owner_1, 'Honda', 'Vario 125 CBS-ISS', 2023, 'BL 2145 CC', 11200, 'Biru Navy', 'Skutik Harian', 125, 'Otomatis (CVT)', 'Pertalite (RON 90)', 'assets/images/motorcycles/vario_160.jpg', false),
+      ('33333333-0000-0000-0000-000000000010', coalesce((select id from public.profiles where id = v_owner_2), v_owner_1), 'Honda', 'ADV 160 ABS', 2024, 'BL 6099 TR', 4800, 'Merah Crimson', 'Skutik Maxi', 160, 'Otomatis (CVT)', 'Pertamax (RON 92)', 'assets/images/motorcycles/nmax_155.jpg', false),
+      ('33333333-0000-0000-0000-000000000011', coalesce((select id from public.profiles where id = v_owner_3), v_owner_1), 'Honda', 'Supra X 125 FI', 2020, 'BL 1984 DX', 38500, 'Hitam Doff', 'Bebek / Cub', 125, 'Semi-Otomatis 4-Speed', 'Pertalite (RON 90)', 'assets/images/motorcycles/vario_160.jpg', false),
+      ('33333333-0000-0000-0000-000000000012', coalesce((select id from public.profiles where id = v_owner_3), v_owner_1), 'Vespa', 'Primavera 150 i-get', 2023, 'BL 8810 VP', 6200, 'Hijau Sage', 'Skutik Retro', 155, 'Otomatis (CVT)', 'Pertamax (RON 92)', 'assets/images/motorcycles/scoopy_prestige.jpg', false)
     on conflict (id) do update set
       brand = excluded.brand,
       model = excluded.model,
       production_year = excluded.production_year,
       license_plate = excluded.license_plate,
       current_km = excluded.current_km,
+      color = excluded.color,
+      category = excluded.category,
+      engine_cc = excluded.engine_cc,
+      transmission = excluded.transmission,
+      fuel_type = excluded.fuel_type,
+      photo_url = excluded.photo_url,
       is_simulation = false;
 
     -- B. 6 Riwayat Servis Terhubung Bengkel

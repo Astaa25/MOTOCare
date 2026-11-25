@@ -541,35 +541,15 @@ class _HelpRequestDetailScreenState
 
                       // Kontak & Motor
                       Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: <Widget>[
-                          Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: <Widget>[
-                              const Text(
-                                'Nomor Telepon Anda',
-                                style: TextStyle(
-                                  fontSize: 11,
-                                  color: AppColors.textSecondary,
-                                ),
-                              ),
-                              const SizedBox(height: 2),
-                              Text(
-                                request.contactPhone,
-                                style: const TextStyle(
-                                  fontSize: 13,
-                                  fontWeight: FontWeight.w600,
-                                  color: AppColors.textPrimary,
-                                ),
-                              ),
-                            ],
-                          ),
-                          if (request.motorcycleName != null) ...<Widget>[
-                            Column(
-                              crossAxisAlignment: CrossAxisAlignment.end,
+                          Expanded(
+                            flex: 2,
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
                               children: <Widget>[
                                 const Text(
-                                  'Sepeda Motor',
+                                  'Nomor Telepon Anda',
                                   style: TextStyle(
                                     fontSize: 11,
                                     color: AppColors.textSecondary,
@@ -577,7 +557,9 @@ class _HelpRequestDetailScreenState
                                 ),
                                 const SizedBox(height: 2),
                                 Text(
-                                  request.motorcycleName!,
+                                  request.contactPhone,
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
                                   style: const TextStyle(
                                     fontSize: 13,
                                     fontWeight: FontWeight.w600,
@@ -585,6 +567,37 @@ class _HelpRequestDetailScreenState
                                   ),
                                 ),
                               ],
+                            ),
+                          ),
+                          if (request.motorcycleName != null) ...<Widget>[
+                            const SizedBox(width: 12),
+                            Expanded(
+                              flex: 3,
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.end,
+                                children: <Widget>[
+                                  const Text(
+                                    'Sepeda Motor',
+                                    textAlign: TextAlign.end,
+                                    style: TextStyle(
+                                      fontSize: 11,
+                                      color: AppColors.textSecondary,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 2),
+                                  Text(
+                                    request.motorcycleName!,
+                                    textAlign: TextAlign.end,
+                                    maxLines: 2,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: const TextStyle(
+                                      fontSize: 13,
+                                      fontWeight: FontWeight.w600,
+                                      color: AppColors.textPrimary,
+                                    ),
+                                  ),
+                                ],
+                              ),
                             ),
                           ],
                         ],

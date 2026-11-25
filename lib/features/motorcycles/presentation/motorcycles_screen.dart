@@ -179,6 +179,11 @@ class MotorcyclesScreen extends ConsumerWidget {
                           currentMileage: motor.currentMileage,
                           mileageUpdatedAt: motor.mileageUpdatedAt,
                           heroTag: motor.id,
+                          color: motor.resolvedColor,
+                          category: motor.resolvedCategory,
+                          engineCc: motor.resolvedEngineCc,
+                          transmission: motor.resolvedTransmission,
+                          photoUrl: motor.resolvedPhotoPath,
                           statusBadge: motor.isMileageStale
                               ? const StatusChip(
                                   label: 'KM Perlu Update',
@@ -232,19 +237,16 @@ class MotorcyclesScreen extends ConsumerWidget {
         ),
       ),
     ),
-    floatingActionButton: Padding(
-        padding: const EdgeInsets.only(bottom: 76),
-        child: FloatingActionButton.extended(
-          key: const Key('add_motorcycle_fab'),
-          onPressed: () => context.push('/motors/new'),
-          backgroundColor: AppColors.primary,
-          foregroundColor: Colors.white,
-          elevation: 4,
-          icon: const Icon(Icons.add_rounded),
-          label: const Text(
-            'Tambah Motor Baru',
-            style: TextStyle(fontWeight: FontWeight.w700),
-          ),
+    floatingActionButton: FloatingActionButton.extended(
+        key: const Key('add_motorcycle_fab'),
+        onPressed: () => context.push('/motors/new'),
+        backgroundColor: AppColors.primary,
+        foregroundColor: Colors.white,
+        elevation: 4,
+        icon: const Icon(Icons.add_rounded),
+        label: const Text(
+          'Tambah Motor Baru',
+          style: TextStyle(fontWeight: FontWeight.w700),
         ),
       ),
     );

@@ -64,13 +64,15 @@ void main() {
   final testRequestOtw = ServiceRequest(
     id: 'req-otw-01',
     userId: 'user-01',
+    motorcycleId: 'motor-01',
+    motorcycleName: 'Yamaha NMAX 155 (BL 3533 NAN)',
     issueCategory: 'Mesin Mogok',
     issueDescription: 'Motor mati mendadak dekat Simpang Elak',
     addressText: 'Jl. Merdeka Barat No. 88, Banda Sakti, Kota Lhokseumawe',
     cityRegency: 'Kota Lhokseumawe',
     latitude: 5.1801,
     longitude: 97.1402,
-    contactPhone: '081234567890',
+    contactPhone: '081279948618',
     status: RequestStatus.onTheWay,
     createdAt: DateTime.now(),
     expiresAt: DateTime.now().add(const Duration(minutes: 15)),
@@ -132,11 +134,24 @@ void main() {
       ),
     );
 
-    await tester.pump();
-    await tester.pumpAndSettle();
+    final capturedErrors = <FlutterErrorDetails>[];
+    final previousOnError = FlutterError.onError;
+    FlutterError.onError = (details) {
+      capturedErrors.add(details);
+    };
+    try {
+      await tester.pump();
+      await tester.pumpAndSettle();
+    } finally {
+      FlutterError.onError = previousOnError;
+    }
 
-    final exception = tester.takeException();
-    expect(exception, isNull, reason: '$screenName mengalami exception/overflow: $exception');
+    final firstError = capturedErrors.isNotEmpty ? capturedErrors.first : null;
+    expect(
+      firstError,
+      isNull,
+      reason: '$screenName mengalami exception/overflow: ${firstError?.toString() ?? ''}',
+    );
   }
 
   group('Audit Pixel Overload / RenderFlex Overflow Seluruh Layar MotoCare', () {
@@ -341,6 +356,24 @@ void main() {
         tester,
         screen: const MechanicHomeScreen(),
         screenName: 'MechanicHomeScreen (320px)',
+        width: 320,
+        height: 640,
+        textScale: 1.0,
+      );
+
+      await testScreenOverflow(
+        tester,
+        screen: const HelpRequestDetailScreen(requestId: 'req-otw-01'),
+        screenName: 'HelpRequestDetailScreen (320px)',
+        width: 320,
+        height: 640,
+        textScale: 1.0,
+      );
+
+      await testScreenOverflow(
+        tester,
+        screen: const CreateHelpRequestScreen(),
+        screenName: 'CreateHelpRequestScreen (320px)',
         width: 320,
         height: 640,
         textScale: 1.0,

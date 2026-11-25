@@ -1,6 +1,7 @@
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import '../../features/motorcycles/data/motorcycle_catalog.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_tokens.dart';
 import '../utils/formatters.dart';
@@ -23,6 +24,11 @@ class MotorcycleCard extends StatelessWidget {
   final double? serviceCycleProgress;
   final String? serviceStatusText;
   final String? heroTag;
+  final String? color;
+  final String? category;
+  final int? engineCc;
+  final String? transmission;
+  final String? photoUrl;
   final VoidCallback? onUpdateMileage;
   final VoidCallback? onViewServices;
   final VoidCallback? onViewReminders;
@@ -40,6 +46,11 @@ class MotorcycleCard extends StatelessWidget {
     this.serviceCycleProgress,
     this.serviceStatusText,
     this.heroTag,
+    this.color,
+    this.category,
+    this.engineCc,
+    this.transmission,
+    this.photoUrl,
     this.onUpdateMileage,
     this.onViewServices,
     this.onViewReminders,
@@ -83,7 +94,7 @@ class MotorcycleCard extends StatelessWidget {
                             style: const TextStyle(
                               fontSize: 17,
                               fontWeight: FontWeight.w800,
-                              color: AppColors.textPrimary,
+                              color: Colors.white,
                               letterSpacing: -0.3,
                             ),
                           ),
@@ -97,12 +108,12 @@ class MotorcycleCard extends StatelessWidget {
                                 'Tahun $productionYear',
                                 style: const TextStyle(
                                   fontSize: 12,
-                                  color: AppColors.textSecondary,
-                                  fontWeight: FontWeight.w500,
+                                  color: Color(0xFFD5E5E3),
+                                  fontWeight: FontWeight.w600,
                                 ),
                               ),
                               if (licensePlate != null && licensePlate!.isNotEmpty) ...<Widget>[
-                                const Text('•', style: TextStyle(color: AppColors.textSecondary, fontSize: 10)),
+                                const Text('•', style: TextStyle(color: Color(0xFFD5E5E3), fontSize: 10)),
                                 // Plat nomor fisik Indonesia: latar putih bersih, garis tepi charcoal tegas (#243830), font tebal khas plat
                                 heroTag != null && heroTag!.isNotEmpty
                                     ? Hero(
@@ -111,6 +122,24 @@ class MotorcycleCard extends StatelessWidget {
                                       )
                                     : _buildLicensePlateBadge(licensePlate!),
                               ],
+                            ],
+                          ),
+                          const SizedBox(height: 6),
+                          Wrap(
+                            spacing: 6,
+                            runSpacing: 4,
+                            children: <Widget>[
+                              _buildDarkSpecPill(
+                                label: color ?? MotorcycleCatalog.findSpec(brand, model).defaultColor,
+                                dotColor: MotorcycleCatalog.resolveSwatchColor(
+                                  color ?? MotorcycleCatalog.findSpec(brand, model).defaultColor,
+                                ),
+                              ),
+                              _buildDarkSpecPill(
+                                label: '${engineCc ?? MotorcycleCatalog.findSpec(brand, model).engineCc} cc',
+                              ),
+                              if (category != null && category!.isNotEmpty)
+                                _buildDarkSpecPill(label: category!),
                             ],
                           ),
                         ],
@@ -344,24 +373,66 @@ class MotorcycleCard extends StatelessWidget {
 
   Widget _buildMotorIcon() {
     return Container(
-      width: 48,
-      height: 48,
+      width: 64,
+      height: 54,
+      padding: const EdgeInsets.all(3),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: const Color(0xFFFAF6F0),
         borderRadius: BorderRadius.circular(14),
         border: Border.all(color: AppColors.peach, width: 1.2),
         boxShadow: <BoxShadow>[
           BoxShadow(
-            color: AppColors.terracotta.withValues(alpha: 0.12),
+            color: Colors.black.withValues(alpha: 0.16),
             blurRadius: 8,
             offset: const Offset(0, 3),
           ),
         ],
       ),
-      child: const Icon(
-        Icons.two_wheeler_rounded,
-        color: AppColors.terracotta,
-        size: 28,
+      child: MotorcycleImage(
+        brand: brand,
+        model: model,
+        photoUrl: photoUrl,
+        fit: BoxFit.contain,
+        borderRadius: BorderRadius.circular(10),
+      ),
+    );
+  }
+
+  Widget _buildDarkSpecPill({
+    required String label,
+    Color? dotColor,
+  }) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2.5),
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: 0.13),
+        borderRadius: BorderRadius.circular(999),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.22)),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: <Widget>[
+          if (dotColor != null) ...<Widget>[
+            Container(
+              width: 7,
+              height: 7,
+              decoration: BoxDecoration(
+                color: dotColor,
+                shape: BoxShape.circle,
+                border: Border.all(color: Colors.white, width: 0.9),
+              ),
+            ),
+            const SizedBox(width: 4),
+          ],
+          Text(
+            label,
+            style: const TextStyle(
+              fontSize: 10.5,
+              fontWeight: FontWeight.w600,
+              color: Colors.white,
+            ),
+          ),
+        ],
       ),
     );
   }

@@ -10,6 +10,7 @@ import '../../../core/widgets/loading_skeleton.dart';
 import '../../../core/widgets/primary_button.dart';
 import '../../../core/widgets/secondary_button.dart';
 import '../../../core/widgets/status_chip.dart';
+import '../data/motorcycle_catalog.dart';
 import '../domain/motorcycle.dart';
 import 'motorcycle_providers.dart';
 
@@ -75,33 +76,97 @@ class MotorcycleDetailScreen extends ConsumerWidget {
                   ),
                   child: Column(
                     children: <Widget>[
-                      // Banner gradien
+                      // Showcase Foto Studio Kendaraan
                       Container(
-                        padding: const EdgeInsets.all(20),
+                        width: double.infinity,
+                        height: 175,
                         decoration: const BoxDecoration(
-                          gradient: AppColors.vehicleCardGradient,
+                          color: Color(0xFFFAF6F0),
                           borderRadius: BorderRadius.vertical(top: Radius.circular(15)),
                         ),
-                        child: Row(
+                        child: Stack(
                           children: <Widget>[
-                            Hero(
-                              tag: 'motor_icon_${motor.id}',
-                              child: Container(
-                                width: 56,
-                                height: 56,
-                                decoration: BoxDecoration(
-                                  color: Colors.white,
-                                  borderRadius: BorderRadius.circular(14),
-                                  border: Border.all(color: AppColors.peach),
-                                ),
-                                child: const Icon(
-                                  Icons.two_wheeler_rounded,
-                                  color: AppColors.primary,
-                                  size: 32,
+                            Positioned.fill(
+                              child: Padding(
+                                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                                child: Hero(
+                                  tag: 'motor_icon_${motor.id}',
+                                  child: MotorcycleImage(
+                                    brand: motor.brand,
+                                    model: motor.model,
+                                    photoUrl: motor.resolvedPhotoPath,
+                                    fit: BoxFit.contain,
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
                                 ),
                               ),
                             ),
-                            const SizedBox(width: 16),
+                            Positioned(
+                              top: 10,
+                              left: 12,
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                                decoration: BoxDecoration(
+                                  color: Colors.white.withValues(alpha: 0.92),
+                                  borderRadius: BorderRadius.circular(999),
+                                  border: Border.all(color: AppColors.border),
+                                ),
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: <Widget>[
+                                    Container(
+                                      width: 9,
+                                      height: 9,
+                                      decoration: BoxDecoration(
+                                        color: MotorcycleCatalog.resolveSwatchColor(motor.resolvedColor),
+                                        shape: BoxShape.circle,
+                                        border: Border.all(color: AppColors.charcoalGreen, width: 0.8),
+                                      ),
+                                    ),
+                                    const SizedBox(width: 6),
+                                    Text(
+                                      motor.resolvedColor,
+                                      style: const TextStyle(
+                                        fontSize: 11,
+                                        fontWeight: FontWeight.w700,
+                                        color: AppColors.deepTeal,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                            Positioned(
+                              top: 10,
+                              right: 12,
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                                decoration: BoxDecoration(
+                                  color: AppColors.deepTeal,
+                                  borderRadius: BorderRadius.circular(999),
+                                ),
+                                child: Text(
+                                  '${motor.resolvedEngineCc} cc',
+                                  style: const TextStyle(
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.w700,
+                                    color: Colors.white,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+
+                      // Banner gradien header info utama
+                      Container(
+                        padding: const EdgeInsets.all(18),
+                        decoration: const BoxDecoration(
+                          gradient: AppColors.vehicleCardGradient,
+                        ),
+                        child: Row(
+                          children: <Widget>[
                             Expanded(
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -109,17 +174,18 @@ class MotorcycleDetailScreen extends ConsumerWidget {
                                   Text(
                                     motor.name,
                                     style: const TextStyle(
-                                      fontSize: 18,
+                                      fontSize: 19,
                                       fontWeight: FontWeight.w800,
-                                      color: AppColors.textPrimary,
+                                      color: Colors.white,
                                     ),
                                   ),
                                   const SizedBox(height: 4),
                                   Text(
-                                    'Tahun ${motor.productionYear}',
+                                    'Tahun ${motor.productionYear} • ${motor.resolvedCategory}',
                                     style: const TextStyle(
                                       fontSize: 13,
-                                      color: AppColors.textSecondary,
+                                      color: Color(0xFFD5E5E3),
+                                      fontWeight: FontWeight.w600,
                                     ),
                                   ),
                                   if (motor.licensePlate != null && motor.licensePlate!.isNotEmpty) ...<Widget>[
@@ -215,7 +281,56 @@ class MotorcycleDetailScreen extends ConsumerWidget {
                     ],
                   ),
                 ),
-                const SizedBox(height: 24),
+                const SizedBox(height: 16),
+
+                // Kartu Spesifikasi & Detail Kendaraan
+                Container(
+                  key: const Key('motorcycle_specs_card'),
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: AppColors.surfaceBright,
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(color: AppColors.border),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: <Widget>[
+                      const Row(
+                        children: <Widget>[
+                          Icon(Icons.tune_rounded, size: 18, color: AppColors.primary),
+                          SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              'Detail & Spesifikasi Kendaraan',
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                              style: TextStyle(
+                                fontSize: 14.5,
+                                fontWeight: FontWeight.w800,
+                                color: AppColors.deepTeal,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 12),
+                      _SpecDetailRow(
+                        label: 'Warna Body',
+                        value: motor.resolvedColor,
+                        leadingDotColor: MotorcycleCatalog.resolveSwatchColor(motor.resolvedColor),
+                      ),
+                      const Divider(height: 16),
+                      _SpecDetailRow(label: 'Kategori', value: motor.resolvedCategory),
+                      const Divider(height: 16),
+                      _SpecDetailRow(label: 'Kapasitas Mesin', value: '${motor.resolvedEngineCc} cc'),
+                      const Divider(height: 16),
+                      _SpecDetailRow(label: 'Transmisi', value: motor.resolvedTransmission),
+                      const Divider(height: 16),
+                      _SpecDetailRow(label: 'Rekomendasi BBM', value: motor.resolvedFuelType),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 20),
 
                 // Menu Navigasi Terkait (Servis & Pengingat)
                 Material(
@@ -312,7 +427,72 @@ class MotorcycleDetailScreen extends ConsumerWidget {
           },
         ),
       ),
-    ),
-  );
+      ),
+    );
+  }
 }
+
+class _SpecDetailRow extends StatelessWidget {
+  final String label;
+  final String value;
+  final Color? leadingDotColor;
+
+  const _SpecDetailRow({
+    required this.label,
+    required this.value,
+    this.leadingDotColor,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: <Widget>[
+        Expanded(
+          flex: 2,
+          child: Text(
+            label,
+            style: const TextStyle(
+              fontSize: 12.5,
+              color: AppColors.textSecondary,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+        ),
+        const SizedBox(width: 8),
+        Expanded(
+          flex: 3,
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.end,
+            children: <Widget>[
+              if (leadingDotColor != null) ...<Widget>[
+                Container(
+                  width: 10,
+                  height: 10,
+                  decoration: BoxDecoration(
+                    color: leadingDotColor,
+                    shape: BoxShape.circle,
+                    border: Border.all(color: AppColors.charcoalGreen, width: 0.9),
+                  ),
+                ),
+                const SizedBox(width: 6),
+              ],
+              Flexible(
+                child: Text(
+                  value,
+                  textAlign: TextAlign.end,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w700,
+                    color: AppColors.deepTeal,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
 }

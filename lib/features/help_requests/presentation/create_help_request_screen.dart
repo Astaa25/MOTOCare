@@ -774,52 +774,78 @@ class _CreateHelpRequestScreenState
               ),
               const SizedBox(height: 12),
 
-              // Alamat Penjemputan / Lokasi GPS
+              // Alamat Penjemputan / Lokasi GPS (responsif agar tidak overflow saat 'Mencari...')
               Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: <Widget>[
-                  const Text(
-                    'Lokasi Penjemputan *',
-                    style: TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w700,
-                      color: AppColors.textPrimary,
+                  const Expanded(
+                    child: Text(
+                      'Lokasi Penjemputan *',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w700,
+                        color: AppColors.textPrimary,
+                      ),
                     ),
                   ),
-                  Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: <Widget>[
-                      TextButton.icon(
-                        key: const Key('btn_open_picker_from_form'),
-                        icon: const Icon(Icons.map_outlined, size: 15),
-                        label: const Text('Peta', style: TextStyle(fontSize: 12)),
-                        onPressed: () async {
-                          final result = await context.push<LocationDraft>('/help/picker');
-                          if (result != null && mounted) {
-                            setState(() {
-                              _addressController.text = result.addressText;
-                              _cityRegency = result.cityRegency;
-                              _latitude = result.latitude;
-                              _longitude = result.longitude;
-                              if (result.landmark != null && result.landmark!.isNotEmpty) {
-                                _landmarkController.text = result.landmark!;
-                              }
-                            });
-                          }
-                        },
-                      ),
-                      TextButton.icon(
-                        key: const Key('get_gps_location_button'),
-                        icon: _isDetectingLocation
-                            ? MotoCareLoadingIndicator.small(color: AppColors.primary)
-                            : const Icon(Icons.my_location_rounded, size: 15),
-                        label: Text(
-                          _isDetectingLocation ? 'Mencari...' : 'GPS',
-                          style: const TextStyle(fontSize: 12),
+                  const SizedBox(width: 4),
+                  Flexible(
+                    flex: 0,
+                    child: Wrap(
+                      spacing: 2,
+                      crossAxisAlignment: WrapCrossAlignment.center,
+                      children: <Widget>[
+                        TextButton.icon(
+                          key: const Key('btn_open_picker_from_form'),
+                          style: TextButton.styleFrom(
+                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                            minimumSize: Size.zero,
+                            tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                          ),
+                          icon: const Icon(Icons.map_outlined, size: 15),
+                          label: const Text('Peta', style: TextStyle(fontSize: 12)),
+                          onPressed: () async {
+                            final result = await context.push<LocationDraft>('/help/picker');
+                            if (result != null && mounted) {
+                              setState(() {
+                                _addressController.text = result.addressText;
+                                _cityRegency = result.cityRegency;
+                                _latitude = result.latitude;
+                                _longitude = result.longitude;
+                                if (result.landmark != null && result.landmark!.isNotEmpty) {
+                                  _landmarkController.text = result.landmark!;
+                                }
+                              });
+                            }
+                          },
                         ),
-                        onPressed: _isDetectingLocation ? null : _detectGpsLocation,
-                      ),
-                    ],
+                        TextButton.icon(
+                          key: const Key('get_gps_location_button'),
+                          style: TextButton.styleFrom(
+                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                            minimumSize: Size.zero,
+                            tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                          ),
+                          icon: _isDetectingLocation
+                              ? SizedBox(
+                                  width: 14,
+                                  height: 14,
+                                  child: FittedBox(
+                                    child: MotoCareLoadingIndicator.small(
+                                      color: AppColors.primary,
+                                    ),
+                                  ),
+                                )
+                              : const Icon(Icons.my_location_rounded, size: 15),
+                          label: Text(
+                            _isDetectingLocation ? 'Cari...' : 'GPS',
+                            style: const TextStyle(fontSize: 12),
+                          ),
+                          onPressed: _isDetectingLocation ? null : _detectGpsLocation,
+                        ),
+                      ],
+                    ),
                   ),
                 ],
               ),

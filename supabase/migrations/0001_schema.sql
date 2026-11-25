@@ -55,6 +55,12 @@ create table if not exists public.vehicles (
   production_year integer not null check (production_year >= 1970 and production_year::numeric <= (extract(year from now()) + 1::numeric)),
   license_plate text,
   current_km integer not null default 0 check (current_km >= 0),
+  color text,
+  category text,
+  engine_cc integer,
+  transmission text,
+  fuel_type text,
+  photo_url text,
   is_simulation boolean not null default false,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()

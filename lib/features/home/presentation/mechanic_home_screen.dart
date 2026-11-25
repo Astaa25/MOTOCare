@@ -874,10 +874,15 @@ class _MechanicHomeScreenState extends ConsumerState<MechanicHomeScreen> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: <Widget>[
-              Text(
-                customerName,
-                style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w700),
+              Expanded(
+                child: Text(
+                  customerName,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w700),
+                ),
               ),
+              const SizedBox(width: 8),
               Text(
                 cost,
                 style: const TextStyle(
@@ -894,7 +899,15 @@ class _MechanicHomeScreenState extends ConsumerState<MechanicHomeScreen> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: <Widget>[
-              Text(time, style: const TextStyle(fontSize: 11, color: AppColors.textSecondary)),
+              Expanded(
+                child: Text(
+                  time,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(fontSize: 11, color: AppColors.textSecondary),
+                ),
+              ),
+              const SizedBox(width: 8),
               Text(rating, style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600)),
             ],
           ),

@@ -48,6 +48,12 @@ class MotorcyclesNotifier extends StateNotifier<AsyncValue<List<Motorcycle>>> {
     required int productionYear,
     String? licensePlate,
     required int currentMileage,
+    String? color,
+    String? category,
+    int? engineCc,
+    String? transmission,
+    String? fuelType,
+    String? photoUrl,
   }) async {
     final uid = _userId ?? 'demo-user-id';
     final result = await _repository.addMotorcycle(
@@ -57,6 +63,12 @@ class MotorcyclesNotifier extends StateNotifier<AsyncValue<List<Motorcycle>>> {
       productionYear: productionYear,
       licensePlate: licensePlate,
       currentMileage: currentMileage,
+      color: color,
+      category: category,
+      engineCc: engineCc,
+      transmission: transmission,
+      fuelType: fuelType,
+      photoUrl: photoUrl,
     );
 
     if (result.isSuccess) {

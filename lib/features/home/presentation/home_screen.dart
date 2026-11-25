@@ -14,6 +14,7 @@ import '../../../core/widgets/loading_skeleton.dart';
 import '../../../core/widgets/status_chip.dart';
 import '../../../core/widgets/tertiary_button.dart';
 import '../../auth/presentation/auth_state_provider.dart';
+import '../../motorcycles/data/motorcycle_catalog.dart';
 import '../../motorcycles/domain/motorcycle.dart';
 import '../../motorcycles/presentation/motorcycle_providers.dart';
 import '../../notifications/presentation/notifications_providers.dart';
@@ -709,29 +710,88 @@ class _FigmaActiveMotorCard extends StatelessWidget {
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      '${motor.licensePlate} · ${AppFormatters.formatKilometer(motor.currentMileage)}',
+                      '${motor.licensePlate ?? 'Tanpa Plat'} · ${AppFormatters.formatKilometer(motor.currentMileage)}',
                       style: const TextStyle(
                         fontSize: 13,
                         fontWeight: FontWeight.w500,
                         color: Color(0xFFB0CCC7),
                       ),
                       maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    const SizedBox(height: 6),
+                    Wrap(
+                      spacing: 6,
+                      runSpacing: 4,
+                      children: <Widget>[
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                          decoration: BoxDecoration(
+                            color: Colors.white.withValues(alpha: 0.12),
+                            borderRadius: BorderRadius.circular(999),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: <Widget>[
+                              Container(
+                                width: 7,
+                                height: 7,
+                                decoration: BoxDecoration(
+                                  color: MotorcycleCatalog.resolveSwatchColor(motor.resolvedColor),
+                                  shape: BoxShape.circle,
+                                  border: Border.all(color: Colors.white, width: 0.8),
+                                ),
+                              ),
+                              const SizedBox(width: 4),
+                              Text(
+                                motor.resolvedColor,
+                                style: const TextStyle(
+                                  fontSize: 10.5,
+                                  fontWeight: FontWeight.w600,
+                                  color: Colors.white,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                          decoration: BoxDecoration(
+                            color: Colors.white.withValues(alpha: 0.12),
+                            borderRadius: BorderRadius.circular(999),
+                          ),
+                          child: Text(
+                            '${motor.resolvedEngineCc} cc • ${motor.resolvedCategory}',
+                            style: const TextStyle(
+                              fontSize: 10.5,
+                              fontWeight: FontWeight.w600,
+                              color: Colors.white,
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
                   ],
                 ),
               ),
+              const SizedBox(width: 10),
 
-              // Ikon siluet skuter
+              // Foto studio kendaraan sesuai model
               Container(
-                padding: const EdgeInsets.all(10),
+                width: 72,
+                height: 58,
+                padding: const EdgeInsets.all(3),
                 decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.08),
+                  color: const Color(0xFFFAF6F0),
                   borderRadius: BorderRadius.circular(14),
+                  border: Border.all(color: Colors.white.withValues(alpha: 0.45)),
                 ),
-                child: const Icon(
-                  Icons.two_wheeler_rounded,
-                  size: 36,
-                  color: Color(0xFF86ADA7),
+                child: MotorcycleImage(
+                  brand: motor.brand,
+                  model: motor.model,
+                  photoUrl: motor.resolvedPhotoPath,
+                  fit: BoxFit.contain,
+                  borderRadius: BorderRadius.circular(10),
                 ),
               ),
             ],
